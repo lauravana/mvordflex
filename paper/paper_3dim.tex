@@ -1,0 +1,345 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage[utf8]{inputenc}
+\usepackage[round]{natbib}
+\usepackage{mathrsfs}
+\usepackage{bbm}
+\usepackage{graphicx}
+
+%\usepackage{apacite}
+
+\usepackage{dcolumn}
+\usepackage{booktabs}
+
+\usepackage{footnote}
+\makesavenoteenv{tabular}
+\makesavenoteenv{table}
+
+\usepackage{array,booktabs,ragged2e}
+\usepackage[linkcolor=blue]{hyperref}
+\usepackage{tabularx}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+
+
+\newcommand{\COV}{\mathrm{cov}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\VAR}{\mathrm{var}}
+
+\newcommand{\pkg}[1]{{\normalfont\fontseries{b}\selectfont #1}}
+\let\proglang=\textsf
+\let\code=\texttt
+
+\usepackage{mathtools}
+\DeclareMathOperator{\Mat}{Mat}
+\DeclarePairedDelimiter{\diagfences}{(}{)}
+\newcommand{\diag}{\operatorname{diag}\diagfences}
+
+\defcitealias{baselii}{Basel II (2004)}
+
+
+\addtolength{\oddsidemargin}{-.875in}
+	\addtolength{\evensidemargin}{-.875in}
+	\addtolength{\textwidth}{1.75in}
+
+\setlength{\parindent}{0pt}
+
+ \title{Multivariate ordinal regression for multiple repeated measurements}
+%
+\author{Rainer Hirk, Laura Vana}
+
+\usepackage{Sweave}
+\begin{document}
+\input{figs/paper_3dim-concordance}
+
+
+
+\maketitle
+
+
+\begin{abstract}
+TODO
+	\\ \ \\ \textbf{Keywords: }
+%Composite likelihood, credit ratings, failure information, failure prediction model, financial ratios, multivariate ordinal regression model
+
+\end{abstract}
+
+\section*{TODOs}
+\begin{itemize}
+\item contribution: new model, simulation study, empirical analysis
+\item simulation study: repeat with logit link?, with q =5, T=3,10? $\Sigma$ low? relative efficiency?
+\item rewrite model
+\item results:
+\begin{itemize}
+\item spr only
+\item 3raters: interpretation of negative correlations
+\end{itemize}
+\end{itemize}
+
+\section{Introduction}
+The analysis of repeated ordinal outcomes is an important task in various research fields. Various approaches have been employed where the repeated measurements over time are modeled by means of AR(1) errors (cite ...) in a multivariate ordinal regression setting, while multiple measurements at the same time are modeled through a general correlation structure on the latent scale (\cite{Scott02}, \cite{pub:Hirk+Hornik+Vana:2018a}, ...). In this paper we extend the modeling framework of multivariate ordinal regression models by allowing both repeated and multiple measurements in a single model.
+This is imposed by a special structure of the errors where we distinguish between the correlations at a single point in time and the persistence over time. This approach allows us to keep the parameters to be estimated low.
+\\
+
+In an extensive simulation study we examine the quality of the estimates. For this purpose we simulate ...
+
+
+
+extend \cite{Varin09} and others(Scott, SMAP) by modeling multiple and repeated measurements at the same time. The AR(1) errors of VarinCzado2010 are combined with multiple measurements at the same time.
+
+Taking cite SMAP as a basis we extend the model by allowing repeated measurements over time in addition to the multiple measurements at the same time.
+Multivariate probit and multivariate logit link are supported. Composite likelihood methods are employed to estimate the model parameters. In particular, the pairwise likelihood approach allows us to deal with the multiple dimensions by summing over all combinations of the bivariate probabilities.
+
+
+%STRUCTURE
+Section 2... Section 3...
+
+\section{The model}
+We extend the approach of multivariate ordinal regression models of \cite{pub:mvord:Hirk+Hornik+Vana:2020} by imposing a novel error structure on the errors on a latent scale. The proposed error structure is constructed by a cross-sectional correlation part and a longitudinal correlation part. The advantage of this approach is that correlation among the multiple measurements at the same time as well as the repeated measurements are modeled.
+
+Let $Y_{i,t}^j$ denote an ordinal observation, where $i = 1, \ldots, n$ denotes the subject index, $t = 1, \ldots, T$ the time point and $j \in J_i$ ($J_i$ is a subset of all available outcomes $J$). $q = |J|$ and $q_i = |J_i|$ denotes the cardinality of the sets $J$ and $J_i$.
+We assume the ordinal observation $Y_{i,t}^j$ to be a coarser version of a continuous latent variable $\tilde Y_{i,t}^j$ connected by a vector of suitable threshold parameters $\bm \theta$:
+\begin{align*}
+Y_{i,t}^j = r_{i,t}^j \Leftrightarrow \theta_{r_{i,t}^j-1} < \tilde Y_{i,t}^j \leq \theta_{r_{i,t}^j}, \quad r_{i,t}^j \in \{1, \ldots, K_j\},
+\end{align*}
+where $r_{i,t}^j$ is one of the $K_j$ ordered categories. For each outcome $j$ and time point $t$, we have the following restriction on the threshold parameters $\bm \theta_t^j$: $-\infty \equiv \theta_{t,0}^j < \theta_{t,1}^j < \cdots < \theta_{t,K_j-1}^j \equiv \infty$. The time points $t = t_1, t_2, \ldots T$ are assumed to be equidistant spaced between the observations. For each outcome $j \in J$ we assume the following relationship between $\tilde Y_{i,t}^j$ and $p$-dimensional vector of covariates for subject $i$, time $t$:
+\begin{align*}
+  \tilde{Y}_{i,t}^j = (\bm{x}_{i,t}^j)^\top {\bm \beta}_{t}^j + \epsilon_{i,t}^j.
+\end{align*}
+As we assume to have multiple observations at a single point in time $t$, $\bm Y_{i,t}$ is a $q$-dimensional vector with $\bm Y_{i,t} = (Y_{i,t}^1, Y_{i,t}^2, \ldots, Y_{i,t}^{q})^\top$ and
+$$\bm{X}_{i,t}^* = (\bm I_q \otimes \bm x_{i,t}^\top) = \begin{pmatrix}\bm x_{i,t}^\top & \bm 0 & \cdots & \bm 0\\
+\bm 0 & \bm x_{i,t}^\top & \cdots & \bm 0\\
+\vdots & \vdots & \ddots & \vdots\\
+\bm 0 & \bm 0 & \cdots & \bm x_{i,t}^\top\\
+\end{pmatrix},
+$$
+where $\bm x_{i,t}$ is the $p$-dimensional vector of covariates. Assuming $\bm \beta_t^*$ to be a $p\cdot q$-dimensional vector $\bm \beta_t^* =((\bm{\beta}_{t}^1)^\top, (\bm{\beta}_{t}^2)^\top, \ldots, (\bm{\beta}_{t}^q)^\top)^\top$ we have for each $t$ a $q$-dimensional latent process:
+\begin{align*}
+{\bm {\tilde Y}}_{i,t} =  \bm{X}_{i,t}^* \bm \beta_t^* + \bm \epsilon_{i,t},
+\end{align*}
+where we assume to have an error structure consisting of two parts:
+\begin{align*}
+ \bm  \epsilon_{i,t} = \Psi \bm \epsilon_{i, t-1} + \bm u_{i,t}.
+\end{align*}
+The first part $\Psi \bm \epsilon_{i, t-1}$, where the matrix
+  \begin{align*}
+  \bm \Psi =  \diag{\rho_1, \rho_2, \ldots, \rho_{q}}
+\end{align*}
+reflects the time persistence of the latent variables and $\epsilon_{i, t-1}$ is the error of the previous point in time. The second part of the error structure reflects the cross-sectional correlation by assuming
+\begin{align*}
+  u_{i,t} \sim N(\bm 0, \bm\Sigma),
+\end{align*}
+where
+  \begin{align*}
+  \bm \Sigma = \begin{pmatrix} 1 & \rho_{1,2} & \cdots & \rho_{1,q}\\
+  \rho_{1,2}& \ddots & \ddots & \rho_{2,q}\\
+  \vdots & \ddots & \ddots & \vdots\\
+  \rho_{1,q}&  \rho_{2,q}& \cdots & 1
+  \end{pmatrix}.
+\end{align*}
+
+
+
+
+
+
+\subsection{Matrix form}
+In order to apply the estimation framework proposed in the \proglang{R} package \pkg{mvord} \citep{pub:mvord:Hirk+Hornik+Vana:2020}, we need to rewrite the proposed model in a matrix form. If we assume that $\bm Y_i$ is a $q \times T$ matrix with
+\begin{align*}
+\bm Y_i =  (\bm Y_{i,t_1}, \bm Y_{i,t_2}, \ldots, \bm Y_{i,T}) = \begin{pmatrix}
+Y_{i,t_1}^1 & Y_{i,t_2}^1 & \cdots &  Y_{i,T}^1\\
+Y_{i,t_1}^2 & Y_{i,t_2}^2 & \cdots &  Y_{i,T}^2\\
+\vdots & \vdots & \ddots & \vdots\\
+Y_{i,t_1}^q & Y_{i,t_2}^q & \cdots &  Y_{i,T}^q\\
+\end{pmatrix},
+\end{align*}
+and let $\bm Y_i^*$ be the vectorization of the matrix $\bm Y_i$.
+\begin{align*}
+\bm Y_i^* = \text{vec}(\bm Y_i) =  (Y_{i,t_1}^1, \ldots,  Y_{i,t_1}^{q}, Y_{i,t_2}^1, \ldots, Y_{i,t_2}^{q},  \ldots, Y_{i,t_T}^1, \ldots,  Y_{i,t_T}^{q})^\top
+\end{align*}
+For the corresponding vector of latent variables $\bm {\tilde Y}_{i}^*$ we have:
+For each subject $i$ we have
+\begin{align}\label{eqn:mvord}
+  \bm {\tilde Y}_{i}^* =  \bm{X}_{i}^{*} \bm \beta^{*} + \bm \epsilon_{i}^*,
+\end{align}
+
+
+where $\bm{X}_{i}^{*}$ is a block-diagonal matrix with
+$$\bm{X}_{i}^{*} = \begin{pmatrix}\bm X_{i,t_1}^* & \bm 0 & \cdots & \bm 0\\
+\bm 0 & \bm X_{i,t_2}^* & \cdots & \bm 0\\
+\vdots & \vdots & \ddots & \vdots\\
+\bm 0 & \bm 0 & \cdots & \bm X_{i,T}^*\\
+\end{pmatrix}.
+$$
+
+The vector of regression coefficients $\bm \beta^{*}$ is a $p\cdot q \cdot T$-dimensional vector  $\bm \beta^{*} =((\bm{\beta}_{t_1}^*)^\top, (\bm{\beta}_{t_2}^*)^\top, \ldots, (\bm{\beta}_{T}^*)^\top)^\top$
+% = \begin{pmatrix}
+% \bm\beta_{t_1}^1 & \bm\beta_{t_2}^1 & \cdots &  \bm\beta_{t_T}^1\\
+% \bm\beta_{t_1}^2 & \bm\beta_{t_2}^2 & \cdots &  \bm\beta_{t_T}^2\\
+% \vdots & \vdots & \ddots & \vdots\\
+% \bm\beta_{t_1}^q & \bm\beta_{t_2}^q & \cdots &  \bm\beta_{t_T}^q\\
+% \end{pmatrix}$
+
+% TODO check $\top$, $q_i$ vs $q$
+
+%(optional allow $\bm{\beta}_{t} = (\bm{\beta}_{t}^S, \bm{\beta}_{t}^M, \bm{\beta}_{t}^F, \bm{\beta}_{t}^D)$ with $\tilde{x}_{i,t} = (\bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t})$
+
+
+and $bm\epsilon_i^*$ is a vector of errors with proposed error structure:
+\begin{align*}
+\bm\epsilon_i^* = (\bm \epsilon_{i,1}\top, \bm  \epsilon_{i,2}\top, \ldots, \bm \epsilon_{i,T}\top) \sim MVN_{(q\cdot T)\times (q\cdot T)} \left( \bm 0, \begin{pmatrix}
+\bm \Sigma  & \bm \Psi \bm \Sigma & \bm \Psi^2 \bm \Sigma & \cdots  & \bm \Psi^{T-1} \bm \Sigma\\
+(\bm \Psi \bm \Sigma)^\top & \bm \Sigma  & \bm \Psi \bm \Sigma  & \cdots & \bm \Psi^{T-2} \bm \Sigma\\
+(\bm \Psi^2 \bm \Sigma)^\top & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma & \cdots & \bm \Psi^{T-3} \bm \Sigma\\
+\vdots & \ddots &  \ddots & \ddots & \vdots\\
+(\bm \Psi^{T-1} \bm \Sigma)^\top & \cdots & \cdots & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma
+\end{pmatrix}
+\right).
+\end{align*}
+
+With a slight modification of the model input, the model of Equation~\ref{eqn:mvord} can be estimated with the framework proposed in \cite{pub:mvord:Hirk+Hornik+Vana:2020}. The modified code is available upon request.
+%
+%
+% \begin{align*}
+% \bm \Psi \bm \Sigma = \begin{pmatrix} \rho_S & 0 & 0 & 0\\
+%   0& \rho_M & 0 & 0\\
+%   0& 0 & \rho_F & 0\\
+%   0& 0& 0& \rho_D
+%   \end{pmatrix}
+%   \begin{pmatrix} 1 & \rho_{S,M} & \rho_{S,F} & \rho_{S,D}\\
+%   \rho_{S,M}& 1 & \rho_{M,F} & \rho_{M,D}\\
+%   \rho_{S,F}& \rho_{M,F} & 1 & \rho_{F,D}\\
+%   \rho_{S,D}&  \rho_{M,D}& \rho_{F,D}& 1
+%   \end{pmatrix} =
+%   \begin{pmatrix} \rho_S & \rho_S \rho_{S,M} & \rho_S \rho_{S,F}& \rho_S \rho_{S,D}\\
+%   \rho_M \rho_{S,M}& \rho_M & \rho_M \rho_{M,F}& \rho_M \rho_{M,D}\\
+%   \rho_F \rho_{S,F}& \rho_F \rho_{M,F}& \rho_F & \rho_F \rho_{F,D}\\
+%   \rho_D \rho_{S,D}& \rho_D \rho_{M,D}& \rho_D \rho_{F,D}& \rho_D
+%   \end{pmatrix}
+% \end{align*}
+%
+%
+% \subsection{cov}
+% \begin{align*}
+%   \COV(\epsilon_{S, t_1}, \epsilon_{M, t_2}) = \COV(\epsilon_{S, t_1}, \rho_M \epsilon_{M, t_1} + u_{M, t_2}) =\\
+%   \COV(\epsilon_{S, t_1}, \rho_M \epsilon_{M, t_1})  + \COV(\epsilon_{S, t_1}, u_{M, t_2}) =\\
+%   \rho_M  \COV(\epsilon_{S, t_1}, \epsilon_{M, t_1}) = \rho_M \rho_{S,M}
+% \end{align*}
+
+
+
+\subsection{Composite Likelihood estimation}
+For parameter estimation of model \ref{eqn:mvord} we use a composite
+likelihood approach, where we approximate the full likelihood by a
+pseudo-likelihood constructed from lower dimensional
+marginal distributions \citep{varin_overview}. For a given vector of parameters $\bm\delta$ the likelihood is given by:
+
+\begin{align*}
+\mathscr{L} (\bm\delta) &= \prod_{i=1}^n \Prob\bigg(\bigcap_{\substack{j\in
+   J_{i}\\  t \in \{1, \ldots, T\}}}
+   \{Y_{i,t}^j = r_{i,t}^j\}\bigg)^{w_{i}} =\prod_{i=1}^n \bigg(
+ \int_{D_{i}} f_{i}(\bm{\widetilde{Y^*}}_{i}; \bm
+ \delta)d^{q_{i}}\widetilde{\bm{Y^*}}_{i}\bigg)^{w_{i}},
+\end{align*}
+
+
+where $D_{i} =
+\prod_{t\in \{1, \ldots, T\}} \prod_{j\in J_{i}}  (\theta_{r_{i,t}^j-1}, \theta_{r_{i,t}^j})$ is a
+  TODO Cartesian product, $w_{i}$ are subject-specific non-negative
+  weights (which are set to one in the default case) and $f_{i}$
+  is the $q\times T$-dimensional density of the error terms
+  $\bm\epsilon_i^*$. We approximate this full likelihood by a pairwise likelihood which is
+constructed from bivariate marginal distributions. If the number of
+observed outcomes for subject~$i$ is less than two ($q_i<2$), the
+univariate marginal distribution enters the likelihood. The pairwise
+log-likelihood function is obtained by:
+\begin{align}\label{eqn:logpl}
+  p\ell(\bm\delta)= \sum_{i=1}^n w_i \biggl[&  \sum_{k=1}^{(q\cdot T)-1} \sum_{l=k+1}^{(q\cdot T)}  \log\left(\Prob((\bm Y_{i}^*)_k = (\bm r_{i})_k,
+    (\bm Y_{i}^*)_l = (\bm r_{i})_l\right) \biggr].
+\end{align}
+Denoting by $f_{i,1}$ and $f_{i,2}$ the uni- and bivariate density functions
+corresponding to the error distribution, the uni- and bivariate
+probabilities are given by:
+\begin{align*}
+\Prob(Y_{ik} &= r_{ik}, Y_{il} = r_{il})
+=\displaystyle\int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}}
+\displaystyle\int_{\theta_{l,r_{il}-1}}^{\theta_{l,r_{il}}} f_{i,2}(\widetilde{Y}_{ik},\widetilde{Y}_{il};\bm\delta)
+d\widetilde{Y}_{ik}d\widetilde{Y}_{il},\\ \Prob(Y_{ik} &= r_{ik}) =\displaystyle
+\int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}} f_{i,1}(\widetilde{Y}_{ik}; \bm\delta) d\widetilde{Y}_{ik}.
+\end{align*}
+
+
+\section{Simulation study}
+see simulations\_results.pdf
+
+In order to investigate the quality of pairwise likelihood estimates of the proposed model we performed an extensive simulation study. Within this study we simulated data from the proposed model with various parameter settings. In all settings, we simulated two regression coefficients ($p = 2$), which vary for each of the $T$ time points. We perform the simulation study with two different number of time points, $T = 5$ and $T = 10$. The threshold parameters for each of the three outcomes ($q = 3$) are assumed to be constant over all time points. All outcomes have four categories ($K = 4$), which leads to three threshold parameters to be estimated for each outcome. In order to check the robustness of the error structure we simulated four different combinations of the inter-rater correlation matrix $\Sigma$ and the time-persistence matrix $\Psi$:
+
+\begin{align*}
+  \bm \Sigma \text{ low} =
+  \begin{pmatrix}
+    1 & 0.1 & 0.2\\
+    0.1 & 1 & 0.3\\
+    0.2 & 0.3 & 1
+  \end{pmatrix},
+   \bm \Sigma \text{ high} =
+  \begin{pmatrix}
+    1 & 0.95 & 0.875\\
+    0.95 & 1 & 0.8\\
+    0.875 & 0.8 & 1
+  \end{pmatrix}\\
+     \bm \Psi \text{ low} =
+    \begin{pmatrix}
+    0.25 & 0 & 0\\
+    0 & 0.23 & 0\\
+    0 & 0 & 0.3
+  \end{pmatrix},
+   \bm \Psi \text{ high} =
+  \begin{pmatrix}
+    0.85 & 0 & 0\\
+    0 & 0.83 & 0\\
+    0 & 0 & 0.9
+  \end{pmatrix}
+\end{align*}
+
+The combinations are $\Sigma$ low - $\Psi$ low; $\Sigma$ low - $\Psi$ high; $\Sigma$ high - $\Psi$ low, $\Sigma$ high. We perform the simulation study for two different link functions, the multivariate probit link and the multivariate logit link. For all settings, we performed 100 repetitions with 1000 subjects each. We calculated the mean estimate of the 100 repetitions, the absolute percentage bias\footnote{For values of zero we do not report the APB.} ($APB = |(\text{true parameter} - \text{mean estimate})/\text{true parameter}|$), the mean asymptotic standard error, and the sample standard error.
+
+For all parameter settings we achieve excellent parameter estimates of the proposed model.
+APB ranges from .. to .. . Mean asymptotic standard errors and sample standard errors are similar in magnitude for all estimated parameters.
+Results of the simulation study are available in appendix .. .
+
+
+relative efficiency?
+
+
+
+
+\section{Empirical analysis}
+We apply the proposed model to corporate credit ratings from Standard and Poor's (S\&P) and Moody's as well as to a failure information indicator over the period of 2003--2013. The flexible framework allows to account for the time persistence of the ratings and failures, as well as for the correlation among the raters and failure dimensions.
+
+\subsection{Data}
+In this paper we use S\&P long-term issuer credit ratings from the Compustat-Capital IQ Credit Ratings database as well as issuer credit ratings from Moody's. S\&P provides its ratings on a scale with 21
+non-default categories ranging from AAA to C. Moody’s uses a different scale by assigning 21 rating classes ranging from Aaa to the default class C. The failure indicator is constructed based on the default data from the
+UCLA-LoPucki Bankruptcy Research Database and the Mergent issuer default file. A binary
+failure indicator is constructed in the following way: A default is recorded in a year if a firm filed for bankruptcy under Chapter 7 or Chapter 11 or the firm receives a default rating in the year following the rating observation from
+one of the CRAs. This definition is similar to definition of \cite{campbell2008search}, and to the promoted
+default definition in \cite{baselii}
+
+
+For the construction of the firm-level variables we make use the Compustat
+and CRSP databases together with the corresponding linking files available on Wharton research data services (WRDS). We use the pre-calculated financial
+ratios available in the \textit{Financial Ratios Suite}.
+We include in the analysis the universe of Compustat \/CRSP US
+corporates which have at least one S\&P rating observation or a rating observation of Moody's in the period from
+2003 to 2013. We exclude financial, utility and real estate firms from the data set. The end of year
+ratings are merged to the financial ratios on a
+calendar year basis. We perform this by assigning the
+latest entry available before year end ofthe financial ratios to the end-of-year ratings.  For the computation of the market variables we use daily stock
+price data available an CRSP. Winsorization of all explanatory variables at the 99th percentile as well as
+for ratios with negative values at the 1st percentile is conducted.
+
+As explanatory variables we make use of the variables selected by \cite{Tian2015}. The authors apply the least absolute shrinkage and selection operator (LASSO) on a set of .. variables selected from the literature on credit risk modeling.
