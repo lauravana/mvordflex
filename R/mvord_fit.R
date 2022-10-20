@@ -197,8 +197,20 @@ mvord.fit <- function(rho){
   #############################################################################
   ## help variables to save computation in the likelihood function
   rho$combis <- combn(rho$ndim, 2, simplify = F)
-  rho$dummy_pl_lag <- sapply(rho$combis, function(x)
-    diff(x) <= rho$PL.lag)
+  if (rho$error.structure$name %in% "cor_ar1") {
+    rho$dummy_pl_lag <- sapply(rho$combis, function(x)
+      diff(x) <= rho$PL.lag)
+  }
+  if (grepl("MMO3", rho$error.structure$name)) {
+    ndim_j <- attr(rho$error.structure, "ndim_j")
+    ndim_t <- attr(rho$error.structure, "ndim_t")
+    rho$dummy_pl_lag <- sapply(rho$combis,
+                               function(x) {
+                                 t1 <- (x[1] - 1) %/% ndim_j + 1
+                                 t2 <- (x[2] - 1) %/% ndim_j + 1
+                                 abs(t1 - t2) <= rho$PL.lag
+                               })
+  }
   rho$combis <- rho$combis[rho$dummy_pl_lag == 1]
   ## for which subjects is q_i = 1
   ind_i <- rowSums(!is.na(rho$y)) == 1

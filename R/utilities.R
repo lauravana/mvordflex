@@ -133,7 +133,7 @@ check_args_input2 <- function(rho, data){
   if(!is.null(rho$offset) && length(rho$offset) != rho$ndim) stop("offset has to be of length of the dimension of the model.", call. = FALSE)
   #PL.lag
   if(!is.null(rho$PL.lag)) {
-    if (rho$error.structure$name != "cor_ar1") stop("Use PL.lag only with cor_ar1 error.structure", call. = FALSE)
+    if (!(rho$error.structure$name %in% c("cor_ar1", "cor_MMO3"))) stop("Use PL.lag only with cor_ar1 type error.structures.", call. = FALSE)
     #  && !is.integer(rho$PL.lag)) stop("PL.lag must be positive and of type integer.", call. = FALSE)
     if (rho$PL.lag > rho$ndim) stop("PL.lag exceeds dimension of the model.", call. = FALSE)
   }
