@@ -168,6 +168,46 @@ dr_dalpha_MMO3 <- function(si, xi, indkl, k, l, ndim_j, ndim_t) {
   tmp[, id_m[r1, r2]] <- xi[r1] ^ (lag)
   tmp
 }
+dr_dalpha_MMO3_cross <- function(si, indkl, k, l, ndim_j, ndim_t) {
+  r1 <- (k - 1)  %% ndim_j + 1 ## which rater 1
+  r2 <- (l - 1)  %% ndim_j + 1 ## which rater 2
+  t1 <- (k - 1) %/% ndim_j + 1 ## which time 1
+  t2 <- (l - 1) %/% ndim_j + 1 ## which time 2
+
+  lag <- t2 - t1
+
+  #rho12^1, rho12^1rho13, rho13^1 rho12^2...
+  rr <- si[r1, r2]
+
+  ## id of contemporaneous cors # TODO more efficient
+  id_m <- matrix(0, ndim_j, ndim_j)
+  id_m[upper.tri(id_m)] <- 1:sum(upper.tri(id_m))
+  id_m[lower.tri(id_m)] <- t(id_m)[lower.tri(id_m)]
+
+  id_si <- seq_len(ndim_j*(ndim_j - 1)/2)
+  # id_xi <- ndim_j * (ndim_j - 1)/2 + seq_len(ndim_j)
+
+  tmp <- matrix(0, nrow = sum(indkl), ncol = ndim_j*(ndim_j-1)/2)
+  # tmp[, id_xi[r1]] <- lag * xi[r1] ^ (lag - 1) * rr
+
+  tmp[, id_m[r1, r2]] <- 1
+  tmp
+}
+dr_dalpha_MMO3_ar1 <- function(xi, indkl, k, l, ndim_j, ndim_t) {
+  r1 <- (k - 1)  %% ndim_j + 1 ## which rater 1
+  r2 <- (l - 1)  %% ndim_j + 1 ## which rater 2
+  t1 <- (k - 1) %/% ndim_j + 1 ## which time 1
+  t2 <- (l - 1) %/% ndim_j + 1 ## which time 2
+
+  lag <- t2 - t1
+
+  ## id of contemporaneous cors # TODO more efficient
+  id_xi <- seq_len(ndim_j)
+  tmp <- matrix(0, nrow = sum(indkl), ncol = ndim_j)
+  tmp[, id_xi[r1]] <- lag * xi[r1] ^ (lag - 1)
+
+  tmp
+}
 # th_values <- threshold.values <- rho$threshold.values
 # th_constraints <- threshold.constraints <- rho$threshold.constraints
 constraints_theta <- function(th_values, th_constraints) {
@@ -265,24 +305,27 @@ derivs_ana <- function(rho){
   npar.sd  <-  attr(rho$error.structure, "npar.sd")
 
   par_sigma <-  par[rho$npar.thetas + rho$npar.betas + seq_len(npar.err)]
+
   alpha <- par_sigma[seq_len(npar.cor)]
   gamma <- par_sigma[-seq_len(npar.cor)]
   S <- attr(rho$error.structure, "covariate")
-  if (rho$error.structure$name == "cor_MMO3") {
+  if (grepl("cor_MMO3", rho$error.structure$name)) {
     ndim_j <- attr(rho$error.structure, "ndim_j")
-    npar1 <- ndim_j * (ndim_j - 1)/2
+    npar1  <- attr(rho$error.structure, "npar_sigma")
+    npar_psi  <- attr(rho$error.structure, "npar_psi")
     ndim_t <- attr(rho$error.structure, "ndim_t")
     nlev <- NCOL(S)
     if (nlev > 1) stop("Standard errors are not implemented for cor_MMO3 with more than one level.")
     tpar_si   <- par_sigma[seq_len(npar1)]
-    tpar_psi  <- par_sigma[-seq_len(npar1)]
+    tpar_psi  <- par_sigma[npar1 + seq_len(npar_psi)]
     Sigma <- lapply(seq_len(nlev), function(l) {
       nu <- tpar_si[(l - 1) * npar1 + seq_len(npar1)]
       angles <- pi * exp(nu)/(1 + exp(nu))
       cosmat <- diag(ndim_j)
-      cosmat[lower.tri(cosmat)] <- cos(angles)
+      cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
       S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
-      S1[lower.tri(S1, diag = TRUE)] <- c(rep(1, ndim_j), sin(angles))
+      S1[, 1L] <- 1
+      S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
       tLmat <- sapply(seq_len(ndim_j),
                       function(j) cosmat[j, ] * cumprod(S1[j, ]))
       sigma <- crossprod(tLmat)
@@ -394,13 +437,18 @@ derivs_ana <- function(rho){
                          cov_general = dr_dalpha_general(Skl),
                          cor_equi    = dr_dalpha_equi(alpha, Skl),
                          cor_ar1     = dr_dalpha_ar1(alpha, Skl, lag = l - k),
-                         cor_MMO3    = dr_dalpha_MMO3(si, xi, indkl, k, l, ndim_j, ndim_t))
+                         cor_MMO3    = dr_dalpha_MMO3(si, xi, indkl, k, l, ndim_j, ndim_t),
+                         cor_MMO3_ar1= dr_dalpha_MMO3_ar1(xi, indkl, k, l, ndim_j, ndim_t),
+                         cor_MMO3_cross = dr_dalpha_MMO3_cross(si,indkl, k, l, ndim_j, ndim_t))
+      #print((drdalpha))
       colpos <- switch(rho$error.structure$name,
                        cor_general = (seq_len(NCOL(Skl)) - 1) * rho$ndim * (rho$ndim - 1)/2 + (it - it0),
                        cov_general = (seq_len(NCOL(Skl)) - 1) * rho$ndim * (rho$ndim - 1)/2 + (it - it0),
                        cor_equi    = seq_len(npar.cor),
                        cor_ar1     = seq_len(npar.cor),
-                       cor_MMO3    = seq_len(npar.cor))
+                       cor_MMO3    = seq_len(npar.cor),
+                       cor_MMO3_ar1 = seq_len(npar.cor),
+                       cor_MMO3_cross = seq_len(npar.cor))
       dcorr[indkl, colpos] <- dLdr * drdalpha
     }
     ##################

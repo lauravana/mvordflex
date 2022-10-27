@@ -1,4 +1,4 @@
-mvord.fit <- function(rho){
+mvordflex.fit <- function(rho){
   ## number of thresholds per outcome
   rho$ntheta <- sapply(seq_len(rho$ndim), function(j) nlevels(rho$y[, j]) - 1) # no of categories - 1
 
@@ -280,17 +280,10 @@ mvord.fit <- function(rho){
     # rho$link$F_biv_rect <- rho_non_opt$link$F_biv_rect
     #######
     if (is.character(rho$solver)) {
-      if(rho$fast_fit){
-        rho$optRes <- suppressWarnings(optimx(rho$start, function(x) PLfun_fast(x, rho),
-                                              method = rho$solver,
-                                              hessian = FALSE,
-                                              control = rho$control))
-      } else{
       rho$optRes <- suppressWarnings(optimx(rho$start, function(x) PLfun(x, rho),
                                             method = rho$solver,
                                             hessian = FALSE,
                                             control = rho$control))
-      }
       rho$optpar <- unlist(rho$optRes[1:length(rho$start)])
       rho$objective <- unlist(rho$optRes["value"])
     }
@@ -336,6 +329,7 @@ mvord.fit <- function(rho){
     rho <- PL_se(rho)
   }
   ##############################################
+  # mvord_finalize <- utils::getFromNamespace("mvord_finalize", "mvord")
   res <- mvord_finalize(rho)
   if (rho$se) {
     rownames(rho$varGamma) <- colnames(rho$varGamma) <- c(names(unlist(res$theta))[is.na(unlist(rho$threshold.values))][!duplicated(unlist(rho$ind.thresholds))],                                                        names(res$beta),                                                     attr(res$error.struct, "parnames"))
@@ -386,7 +380,7 @@ mvord.fit <- function(rho){
   res$rho$runtime <- rho$timestamp2 - rho$timestamp1
   res$rho$timestamp1 <- NULL
 
-  class(res) <- "mvord"
+  class(res) <- c("mvord", "mvordflex")
 
   return(res)
 }
@@ -458,8 +452,8 @@ PLfun_old <- function(par, rho){
   - sum(rho$weights * logp)
 }
 
-.onLoad <- function(library, pkg)
-{
-  library.dynam("mvordflex", pkg, library)
-  invisible()
-}
+# .onLoad <- function(library, pkg)
+# {
+#   library.dynam("mvordflex", pkg, library)
+#   invisible()
+# }

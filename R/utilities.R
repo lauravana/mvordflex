@@ -64,7 +64,7 @@ check_args_optimizer <- function(rho){
 }
 
 check_args_error.structure <- function(error.structure, data){
-  allmeth <- c("cor_general",  "cov_general",  "cor_ar1", "cor_equi", "cor_ident", "cor_rel_var", "cor_MMO3")
+  allmeth <- c("cor_general",  "cov_general",  "cor_ar1", "cor_equi", "cor_ident", "cor_rel_var", "cor_MMO3", "cor_MMO3_ar1", "cor_MMO3_cross")
   if (!(as.character(error.structure[[1]]) %in% allmeth)) stop("error.structure not among allowed methods in mvord.")
 
   if(!inherits(error.structure[[2]], "formula")) stop("formula in error.structure has to be of class formula.", call. = FALSE)
@@ -133,7 +133,7 @@ check_args_input2 <- function(rho, data){
   if(!is.null(rho$offset) && length(rho$offset) != rho$ndim) stop("offset has to be of length of the dimension of the model.", call. = FALSE)
   #PL.lag
   if(!is.null(rho$PL.lag)) {
-    if (!(rho$error.structure$name %in% c("cor_ar1", "cor_MMO3"))) stop("Use PL.lag only with cor_ar1 type error.structures.", call. = FALSE)
+    if (!(rho$error.structure$name %in% c("cor_ar1", "cor_MMO3", "cor_MMO3_cross","cor_MMO3_ar1"))) stop("Use PL.lag only with cor_ar1 type error.structures.", call. = FALSE)
     #  && !is.integer(rho$PL.lag)) stop("PL.lag must be positive and of type integer.", call. = FALSE)
     if (rho$PL.lag > rho$ndim) stop("PL.lag exceeds dimension of the model.", call. = FALSE)
   }
@@ -433,25 +433,6 @@ get_labels_theta <- function(rho,j) {
   })
 }
 
-# Backtransform Sigmas
-#' @title Backtransform Sigmas
-#' @description Backtransform Sigmas
-#' @param R correlation matrix
-#' @export
-backtransf_sigmas <- function(R){
-  J <- nrow(R)
-  l <- t(chol(R))
-  angmat <- matrix(1,ncol=J,nrow=J)
-  angmat[-1,1] <- acos(l[-1,1])
-  for (j in 2:(J-1)){
-    sinprod <- apply(sin(angmat[, seq_len(j-1), drop=F]), 1, prod) ## denominator in division
-    angmat[-(1:j),j]<-acos((l/sinprod)[-(1:j),j])
-  }
-  angdivpi <- angmat[lower.tri(angmat)]/pi
-  log(angdivpi/(1-angdivpi))
-}
-
-
 
 # #' @title Data preparation for mvord
 # #'
@@ -686,69 +667,6 @@ set_offset_up <- function(rho){
 }
 
 
-#' @title Control functions for mvord()
-#' @description Control arguments are set for \code{mvord()}.
-#' @param se logical, if \code{TRUE} standard errors are computed.
-#' @param start.values vector of (optional) starting values.
-#' @param solver character string containing the name of the applicable solver of \code{\link{optimx}} (default is \code{"newuoa"})
-#'  or wrapper function for user defined solver.
-#' @param solver.optimx.control a list of control arguments to be passed to \code{\link{optimx}}. See \code{\link{optimx}}.
-# #' @param scale If \code{scale = TRUE}, then for each response the corresponding covariates of \code{\link{class}} \code{"numeric"} are standardized before fitting,
-# #'  i.e., by substracting the mean and dividing by the standard deviation.
-#' @seealso \code{\link{mvord}}
-#' @export
-mvord.control <- function(se = TRUE,
-                          start.values = NULL,
-                          solver = "newuoa",
-                          solver.optimx.control = list(maxit=200000, trace = 0, kkt = FALSE)){
-  if (is.null(solver.optimx.control$maxit)) solver.optimx.control$maxit <- 200000
-  if (is.null(solver.optimx.control$kkt)) solver.optimx.control$kkt <- FALSE
-  if (is.null(solver.optimx.control$trace)) solver.optimx.control$trace <- 0
-  list(se = se, start.values = start.values, solver = solver,
-    solver.optimx.control = solver.optimx.control)
-}
-
-
-# residuals.mvord <- function(object){
-#   probs <- marginal.predict(object, type = "all.prob")
-#   cum.probs <- lapply(probs, function(x) t(apply(x,1,cumsum)))
-#   y <- object$rho$y
-#
-#   residuals <- lapply(1:object$rho$ndim, function(j){
-#     p1 <- cbind(0,cum.probs[[j]])[cbind(1:nobs(object),as.integer(y[,j]))]
-#     p2 <- 1 - cum.probs[[j]][cbind(1:nobs(object),as.integer(y[,j]))]
-#     out <- p1 - p2
-#     names(out) <- rownames(y)
-#     out
-#   })
-#   names(residuals) <- object$rho$y.names
-#   return(residuals)
-# }
-
-
-#Mc Fadden's Pseudo R^2
-#' @title Pseudo \eqn{R^2} for objects of class 'mvord'
-#' @description This function computes Mc Fadden's Pseudo \eqn{R^2} for objects of class \code{'mvord'}.
-#' @param object an object of class \code{'mvord'}.
-#' @param adjusted if \code{TRUE}, then adjusted Mc Fadden's Pseudo \eqn{R^2} is computed.
-#' @seealso \code{\link{mvord}}
-#' @export
-pseudo_R_squared <- function(object, adjusted = FALSE){
-  #fit model ~ 1
-  formula <- object$rho$formula
-  formula[[3]] <- 1
-
-  model0 <- mvord(formula = formula,
-                  data = object$rho$y,
-                  error.structure = cor_equi(~1, value = 0, fixed = TRUE))
-  if (adjusted){
-    1 - (logLik(object) - length(object$rho$optpar)) / logLik(model0)
-  } else{
-    1 - logLik(object) / logLik(model0)
-  }
-}
-
-
 scale_mvord <- function(df){
   if(NCOL(df) == 0) list(x = df, mu = 0, sc = 1)else{
   mu <- apply(df, 2, mean, na.rm = TRUE)
@@ -832,24 +750,4 @@ reduce_size2_Funi.mvord <- function(object){
   #out$rho$contr_theta <- NULL
   attributes(out$error.struct)$subjnames <- NULL
   out
-}
-
-# Polychoric Correlations
-#' @title Computes polychoric correlations
-#' @description This function computes polychoric correleations among two or more variables.
-#' @param x either a vector or a matrix of ordinal responses
-#' @param y an (optional) ordinal vector (only applciable if x is a vector)
-#' @export
-polycor <- function(x, y = NULL){
-  if(is.null(y)){
-    dat_mvord <- as.data.frame(x)
-    #check if $ in cplnames
-    if(any(grepl("$", unlist(colnames(dat_mvord)), fixed = TRUE))) stop("Invalid colnames in x.")
-    formula_mvord <- as.formula(paste0("MMO2(", paste(colnames(dat_mvord), collapse = ", "), ") ~ 0"))
-  } else{
-    formula_mvord <- MMO2(x, y) ~ 0
-    dat_mvord <- cbind.data.frame(x = x, y = y)
-  }
-  res <- mvord(formula_mvord, dat_mvord)
-  res$error.struct
 }

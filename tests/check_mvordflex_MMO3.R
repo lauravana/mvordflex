@@ -144,9 +144,16 @@ df_3dim <- simulate_3dim_1rep(J = J, I = 1000, TT = TT, P = P,
                               beta.matrix = beta.matrix, theta = theta,
                               Sigma = Sigma, Psi = Psi, missings = FALSE, perc.miss = 0)
 
+# data_toy_mvordflex <- simulate_3dim_1rep(J = 3, I = 100, TT = 5, P = 2,
+#                                         beta.matrix = matrix(rep(c(2,-1), each = 5), ncol=2),
+#                                         theta = c(theta[1:2], 0),
+#                                         Sigma = Sigma, Psi = Psi, missings = FALSE, perc.miss = 0)
+# colnames(data_toy_mvordflex)[3:4] <- c("outcome_id", "response")
+# data_toy_mvordflex$outcome_id <- factor(data_toy_mvordflex$outcome_id, labels = c("R1","R2","D1"))
+# save(data_toy_mvordflex, file = "data/data_toy_mvordflex.rda")
 
 library(mvordflex)
-res_MMO3_test <- mvord(formula = MMO3(rating, firm_id, year_id, rater_id) ~ 0 + X1 + X2,
+res_MMO3_test <- mvordflex(formula = MMO3(rating, firm_id, year_id, rater_id) ~ 0 + X1 + X2,
                        data = (df_3dim),
                        error.structure = cor_MMO3(~1),
                        coef.constraints = rep(1:TT, each = J),
