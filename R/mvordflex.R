@@ -47,7 +47,8 @@ NULL
 #' @importFrom mnormt sadmvn sadmvt
 #' @importFrom Matrix bdiag
 #' @importFrom numDeriv grad hessian
-#' @import mvord
+#' @importFrom mvord mvlogit mvprobit print.mvord summary.mvord coef.mvord thresholds
+# #' @import mvord
 #' @import minqa
 #' @import BB
 #' @import dfoptim
@@ -55,7 +56,7 @@ NULL
 
 
 #############################################################################################
-#' @title Multivariate Ordinal Regression Models.
+#' @title Multivariate Ordinal Regression Models for Three-Dimensional Panel Data
 #'
 #' @description
 #' Multivariate ordinal regression models for three dimensional panel data in
