@@ -21,11 +21,12 @@
 #' @export
 cor_MMO3 <-
   ## Constructor for the cor_MMO3 class
-  function(formula = ~ 1, value = numeric(0), fixed = FALSE)
+  function(formula = ~ 1, value = numeric(0), fixed = FALSE, Psi.diag = TRUE)
   {
     obj <- list(name = "cor_MMO3",
                 formula = formula,
-                type = "correlation", value = value, fixed = fixed)
+                type = "correlation", value = value, fixed = fixed,
+                Psi.diag = Psi.diag)
     attr(obj, "formula") <- formula
     class(obj) <- c("cor_MMO3", "error_struct")
     obj
@@ -49,11 +50,12 @@ cor_MMO3_cross <-
 #' @export
 cor_MMO3_ar1 <-
   ## Constructor for the cor_MMO3_ar1 class
-  function(formula = ~ 1, value = numeric(0), fixed = FALSE)
+  function(formula = ~ 1, value = numeric(0), fixed = FALSE, Psi.diag = TRUE)
   {
     obj <- list(name = "cor_MMO3_ar1",
                 formula = formula,
-                type = "correlation", value = value, fixed = fixed)
+                type = "correlation", value = value, fixed = fixed,
+                Psi.diag = Psi.diag)
     attr(obj, "formula") <- formula
     class(obj) <- c("cor_MMO3_ar1", "error_struct")
     obj

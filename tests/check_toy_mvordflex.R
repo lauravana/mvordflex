@@ -1,16 +1,19 @@
 library("mvordflex")
-data(data_toy_mvordflex, package = "mvordflex")
+data("data_toy_mvordflex", package = "mvordflex")
 q <- 3 # number of multiple measurements
 TT <- 5 # number of years
+
 # Note that the number of responses is q*TT
-res <- mvordflex(
+## Probit
+res<- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex,
   error.structure = cor_MMO3(~1),
   coef.constraints = rep(1, q * TT),
-  threshold.constraints = rep(1:q, TT))
+  threshold.constraints = rep(1:q, TT), PL.lag = 1)
 
-res <- mvordflex(
+## Logit
+res_logit <- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex,
   link = mvord::mvlogit(),
@@ -21,7 +24,7 @@ res <- mvordflex(
 
 print(res)
 summary(res)
-thresholds(res)
+mvord::thresholds(res)
 coefficients(res)
 head(error_structure(res))
 
@@ -40,5 +43,5 @@ res_cross <- mvordflex(
   error.structure = cor_MMO3_cross(~1),
   coef.constraints = rep(1, q * TT),
   threshold.constraints = rep(1:q, TT), PL.lag = 1)
-res_cross
-summary(res_cross)
+
+AIC(res_ar1, res_cross, res)

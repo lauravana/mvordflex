@@ -208,28 +208,56 @@ dr_dalpha_MMO3_ar1 <- function(xi, indkl, k, l, ndim_j, ndim_t) {
 
   tmp
 }
+
+constraints_theta <- function(rho) {
+  pick.col.theta <- lapply(seq_len(rho$ndim), function(j)
+    switch(rho$threshold,
+           flexible      = seq_len(rho$ntheta[j]),
+           fix1first     = seq_len(rho$ntheta[j])[-1],
+           fix2first     = seq_len(rho$ntheta[j])[-c(1,2)],
+           fix2firstlast = seq_len(rho$ntheta[j] - 1)[-1]))
+  C_theta <- bdiag(lapply(unique(rho$threshold.constraints), function(j) {
+    idq <- which(rho$threshold.constraints == j)
+    do.call("rbind", lapply(idq, function(k){
+      Ik <- diag(rho$ntheta[k])
+      Ik[, pick.col.theta[[k]], drop = F]
+    }))}))
+
+  id_rows <- NULL
+  indtheta <- cumsum(c(0, rho$ntheta[seq_len(rho$ndim)])) + 1
+
+  for (j in unique(rho$threshold.constraints)) {
+    idq <- which(rho$threshold.constraints == j)
+    id_rows <- c(id_rows,
+                 c(sapply(idq, function(i) indtheta[i]: (indtheta[i + 1] - 1))))
+  }
+  C_theta[id_rows, ] <- C_theta
+  C_theta
+}
+
 # th_values <- threshold.values <- rho$threshold.values
 # th_constraints <- threshold.constraints <- rho$threshold.constraints
-constraints_theta <- function(th_values, th_constraints) {
-  ndim <- length(th_values)
-  ntheta <- sapply(th_values, length)
-  ncat_beg_pos <- cumsum(c(1, ntheta))[seq_len(ndim)]
-  # Find where we have fixed thresholds - the corresponding rows in C_theta will be zero
-  elim.col.theta <- unlist(lapply(seq_len(ndim), function(j) {
-    ncat_beg_pos[j] - 1 + which(!is.na(th_values[[j]]))
-  }))
-
-  th_cat_constraints <- factor(rep(th_constraints, ntheta), # extend from dimension to category
-                               levels = unique(th_constraints))
-
-  id_cat <- unlist(lapply(ntheta, function(x) seq_len(x)))
-  th <- paste0(as.numeric(th_cat_constraints), id_cat) # combine constraint id with category id
-  th <- factor(th, levels = unique(th))
-  C_theta <- model.matrix(~0 + th)
-  C_theta[elim.col.theta, ] <- 0
-  C_theta <- C_theta[, colSums(C_theta) != 0, drop = FALSE]
-  as.matrix(C_theta)
-}
+# constraints_theta <- function(th_values, th_constraints) {
+#   ndim <- length(th_values)
+#   ntheta <- sapply(th_values, length)
+#   ncat_beg_pos <- cumsum(c(1, ntheta))[seq_len(ndim)]
+#   # Find where we have fixed thresholds - the corresponding rows in C_theta will be zero
+#   elim.col.theta <- unlist(lapply(seq_len(ndim), function(j) {
+#     ncat_beg_pos[j] - 1 + which(!is.na(th_values[[j]]))
+#   }))
+#
+#   th_cat_constraints <- factor(rep(th_constraints, ntheta), # extend from dimension to category
+#                                levels = unique(th_constraints))
+#
+#   id_cat <- unlist(lapply(ntheta, function(x) seq_len(x)))
+#   th <- paste0(as.numeric(th_cat_constraints), id_cat) # combine constraint id with category id
+#   th <- factor(th, levels = unique(th))
+#   C_theta <- model.matrix(~0 + th)
+#   C_theta[elim.col.theta, ] <- 0
+#   C_theta <- C_theta[, colSums(C_theta) != 0, drop = FALSE]
+#   print(C_theta)
+#   as.matrix(C_theta)
+# }
 
 set_offset_threshold_u <- function(rho) {
   lapply(seq_len(rho$ndim), function(j) {
@@ -269,7 +297,7 @@ derivs_ana <- function(rho){
 
 
   if (length(rho$constraints) > 0) {
-    C_theta <- constraints_theta(rho$threshold.values, rho$threshold.constraints)
+    C_theta <- constraints_theta(rho)# constraints_theta(rho$threshold.values, rho$threshold.constraints)
     rho$C <- bdiag(c(list(C_theta), rho$constraints))
   } else {
     rho$C <- constraints_theta(rho)
