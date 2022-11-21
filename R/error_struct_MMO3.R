@@ -202,43 +202,64 @@ toeplitz.block <- function(blocks) {
   res[lower.tri(res)] <-  t(res)[lower.tri(res)]
   res
 }
-
+sqrootmat  <- function(M) {
+  e <- eigen(M)
+  e$vectors %*% (t(e$vectors) * sqrt(e$values))
+}
+make_stationary_psi <- function(tpar) {
+  m <-  sqrt(length(tpar)) # this is ndim_j
+  l <- tpar[seq_len(m * (m - 1)/2)]                     ## cholesky of V positive definite
+  d <- tpar[m * (m - 1)/2 + seq_len(m)]                 ## diag V positive definite
+  s <- tpar[m * (m - 1)/2 + m + seq_len(m * (m - 1)/2)] ## Q orthogonal
+  ## Transformations
+  ### For V - positive definite
+  L <- diag(m)
+  L[lower.tri(L)] <- l
+  V <- L %*% (t(L) * exp(d))
+  ### For Q - orthogonal
+  S <- matrix(0, nrow = m, ncol = m)
+  S[lower.tri(S)] <- s
+  S <- S - t(S)
+  Q <- (diag(m) - S) * solve(diag(m) + S)
+  ## make matrix A
+  M <- diag(m) # this is fixed
+  psi <- sqrootmat(V) %*% Q %*% sqrootmat(chol2inv(chol(V + M)))
+  psi
+}
 make_Q_cor_MMO3 <- function(tpar, eobj){
   ndim <- attr(eobj, "ndim")
   ndim_j <- attr(eobj, "ndim_j")
   ndim_t <- attr(eobj, "ndim_t")
   npar_sigma <- attr(eobj, "npar_sigma")
   npar_psi <- attr(eobj, "npar_psi")
-  covar <- attr(eobj, "covariate")
-  nlev <- NCOL(covar)
-  npar1 <- attr(eobj, "npar_sigma")/nlev
-  npar1_psi <- attr(eobj, "npar_psi")/nlev
+  npar1 <- attr(eobj, "npar_sigma")
+  npar1_psi <- attr(eobj, "npar_psi")
   tpar_sigma <- tpar[seq_len(npar_sigma)]
-  tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
-  sigma <- lapply(seq_len(nlev), function(l) {
-    nu <- tpar_sigma[(l - 1) * npar1 + seq_len(npar1)]
-    angles <- pi * exp(nu)/(1 + exp(nu))
-    cosmat <- diag(ndim_j)
-    cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
-    S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
-    S1[, 1L] <- 1
-    S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
-    #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
-    tLmat <- sapply(seq_len(ndim_j),
-                    function(j) cosmat[j, ] * cumprod(S1[j, ]))
-    sigma <- crossprod(tLmat)
-    sigma
-  })
-  psi <- lapply(seq_len(nlev), function(l) {
-    tpar_psi1 <- if(npar1_psi == 0) rep(0, ndim_j) else tpar_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]
-    diag(z2r(tpar_psi1))
-    })
+  tpar_psi <- if(npar_psi == 0) rep(0, ndim_j) else tpar[seq_len(npar_psi) + npar_sigma]
+  nlev <- 1
+  ## Build sigma
+  nu <- tpar_sigma[seq_len(npar_sigma)]
+  angles <- pi * exp(nu)/(1 + exp(nu))
+  cosmat <- diag(ndim_j)
+  cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
+  S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
+  S1[, 1L] <- 1
+  S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
+  tLmat <- sapply(seq_len(ndim_j),
+                  function(j) cosmat[j, ] * cumprod(S1[j, ]))
+  sigma <- crossprod(tLmat)
+  ## Psi
+  if (eobj$Psi.diag) {
+    psi <- diag(z2r(tpar_psi))
+  } else {
+    psi <- make_stationary_psi(tpar_psi)
+  }
 
-  ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
-    s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    crossprod(s_ar, sigma[[l]])
-  })})
-  S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
+  ar_blocks <- lapply(0:(ndim_t - 1), function(t) {
+    s_ar <- if (t == 0) diag(ndim_j) else psi ^ t
+    crossprod(s_ar, sigma)
+  })
+  S <- toeplitz.block(ar_blocks)
   S
 }
 
@@ -250,8 +271,7 @@ error_structure.cor_MMO3 <- function(eobj, type, ...){
   ndim_j <- attr(eobj, "ndim_j")
   covar <- attr(eobj, "covariate")
   ynames <- attr(eobj, "ynames")
-  nlev <- NCOL(covar)
-  npar.cor <- npar/nlev
+  npar.cor <- npar
   npar_sigma <- attr(eobj, "npar_sigma")
   npar_psi <- attr(eobj, "npar_psi")
 
@@ -397,27 +417,15 @@ init_fun.cor_MMO3 <-
     ndim_t <- attr(eobj, "ndim_t")
     ndim_j <- attr(eobj, "ndim_j")
 
-    npar_sigma <-  ndim_j * (ndim_j - 1)/2 * NCOL(attr(eobj, "covariate"))
-    npar_psi <-  ndim_j * NCOL(attr(eobj, "covariate"))
-    attr(eobj, "npar_sigma") <- npar_sigma
-    attr(eobj, "npar_psi") <- npar_psi
-    npar <- npar_sigma + npar_psi
-    attr(eobj, "npar") <- npar
+    attr(eobj, "npar_sigma") <-  ndim_j * (ndim_j - 1)/2
+    attr(eobj, "npar_psi") <- ifelse(eobj$Psi.diag, ndim_j, ndim_j ^ 2)
+    attr(eobj, "npar") <- attr(eobj, "npar_sigma") +  attr(eobj, "npar_psi")
 
     r <- eobj$value
-    # ## check value
-    # if (length(r) == 0) r <- numeric(ndim *  (ndim - 1)/2) # if default set to zero
-    # if (length(r) == n) r <- cbind(r)
-    # if (length(r) == npar_psi *  (npar_psi - 1)/2)  r <- matrix(rep.int(r, n), ncol = npar_psi * (npar_psi - 1)/2, byrow= T) # if only one vector of length npar_psi *  (npar_psi - 1)/2 default set to zero
-    #
-    # if (nrow(r) != n) stop("Number of rows of argument value in cor_general() is not equal to number of subjects.")
-    #
-    # ## TODO - check positive semi-definiteness??
-    # ## end check
-    # eobj$value_tmp <- r
+
     if (is.null(eobj$fixed)) eobj$fixed  <- FALSE
-    attr(eobj, "npar.cor") <- ifelse(eobj$fixed, 0, npar)
-    attr(eobj, "npar.sd") <- 0
+    attr(eobj, "npar.cor") <- ifelse(eobj$fixed, 0, attr(eobj, "npar"))
+    attr(eobj, "npar.sd")  <- 0
     attr(eobj, "npar") <-   attr(eobj, "npar.cor") + attr(eobj, "npar.sd")
     if(length(all.vars(form)) == 1 && !is.factor(data$x[[1]][, all.vars(form)]))
       stop("For cor_MMO3 covariate must be factor!")
@@ -441,12 +449,10 @@ init_fun.cor_MMO3_cross <-
     ndim_t <- attr(eobj, "ndim_t")
     ndim_j <- attr(eobj, "ndim_j")
 
-    npar_sigma <-  ndim_j * (ndim_j - 1)/2 * NCOL(attr(eobj, "covariate"))
-    npar_psi <-  0#ndim_j * NCOL(attr(eobj, "covariate"))
-    attr(eobj, "npar_sigma") <- npar_sigma
-    attr(eobj, "npar_psi") <- npar_psi
-    npar <- npar_sigma + npar_psi
-    attr(eobj, "npar") <- npar
+
+    attr(eobj, "npar_sigma") <- ndim_j * (ndim_j - 1)/2
+    attr(eobj, "npar_psi") <- 0
+    attr(eobj, "npar") <- attr(eobj, "npar_sigma") +  attr(eobj, "npar_psi")
 
     r <- eobj$value
     if (is.null(eobj$fixed)) eobj$fixed  <- FALSE
@@ -474,23 +480,14 @@ init_fun.cor_MMO3_ar1 <-
     ndim_j <- attr(eobj, "ndim_j")
 
     npar_sigma <-  0 # ndim_j * (ndim_j - 1)/2 * NCOL(attr(eobj, "covariate"))
-    npar_psi <-  ndim_j * NCOL(attr(eobj, "covariate"))
+    npar_psi <-  ifelse(eobj$Psi.diag, ndim_j, ndim_j ^ 2)
     attr(eobj, "npar_sigma") <- npar_sigma
     attr(eobj, "npar_psi") <- npar_psi
     npar <- npar_sigma + npar_psi
     attr(eobj, "npar") <- npar
 
     r <- eobj$value
-    # ## check value
-    # if (length(r) == 0) r <- numeric(ndim *  (ndim - 1)/2) # if default set to zero
-    # if (length(r) == n) r <- cbind(r)
-    # if (length(r) == npar_psi *  (npar_psi - 1)/2)  r <- matrix(rep.int(r, n), ncol = npar_psi * (npar_psi - 1)/2, byrow= T) # if only one vector of length npar_psi *  (npar_psi - 1)/2 default set to zero
-    #
-    # if (nrow(r) != n) stop("Number of rows of argument value in cor_general() is not equal to number of subjects.")
-    #
-    # ## TODO - check positive semi-definiteness??
-    # ## end check
-    # eobj$value_tmp <- r
+
     if (is.null(eobj$fixed)) eobj$fixed  <- FALSE
     attr(eobj, "npar.cor") <- ifelse(eobj$fixed, 0, npar)
     attr(eobj, "npar.sd") <- 0
@@ -524,13 +521,12 @@ build_error_struct.cor_MMO3 <-
     npar_sigma <- attr(eobj, "npar_sigma")
     npar_psi <- attr(eobj, "npar_psi")
     covar <- attr(eobj, "covariate")
-    nlev <- NCOL(covar)
-    npar1 <- attr(eobj, "npar_sigma")/nlev
     tpar_sigma <- tpar[seq_len(npar_sigma)]
-    tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
+    tpar_psi   <- tpar[seq_len(npar_psi) + npar_sigma]
 
     Q <- make_Q_cor_MMO3(tpar, eobj)
 
+    print(Q)
 
     corr_pars <- sapply(Q, function(x) x[lower.tri(x)])
 
@@ -554,7 +550,7 @@ build_error_struct.cor_MMO3_cross <-
     npar_psi <- attr(eobj, "npar_psi")
     covar <- attr(eobj, "covariate")
     nlev <- NCOL(covar)
-    npar1 <- attr(eobj, "npar_sigma")/nlev
+    npar1 <- attr(eobj, "npar_sigma")
     tpar_sigma <- tpar[seq_len(npar_sigma)]
     tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
 
