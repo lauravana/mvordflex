@@ -69,7 +69,8 @@ mvordflex.fit <- function(rho){
   # starting values
   ###############################
   if (is.null(rho$start.values)) {
-    rho$start <- c(get_start_values(rho), start_values(rho$error.structure, rho$y))
+    rho$start <- c(get_start_values(rho),
+                   start_values(rho$error.structure, rho$y))
   } else {
   #   # if(length(unlist(rho$start.values[c("theta", "beta")])) !=  (rho$npar.thetas + rho$npar.betas)){
   #   #   cat(paste0("length should be ", rho$npar.thetas + rho$npar.betas))

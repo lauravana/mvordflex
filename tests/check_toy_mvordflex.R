@@ -12,6 +12,8 @@ res<- mvordflex(
   coef.constraints = rep(1, q * TT),
   threshold.constraints = rep(1:q, TT), PL.lag = 1)
 
+summary(res)
+
 ## Logit
 res_logit <- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
@@ -45,3 +47,20 @@ res_cross <- mvordflex(
   threshold.constraints = rep(1:q, TT), PL.lag = 1)
 
 AIC(res_ar1, res_cross, res)
+
+## Probit
+res <- mvordflex(
+  formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
+  data = data_toy_mvordflex,
+  error.structure = cor_MMO3(~1, Psi.diag = FALSE),
+  coef.constraints = rep(1, q * TT),
+  threshold.constraints = rep(1:q, TT),
+  PL.lag = 1,
+  control = mvord::mvord.control(se = FALSE,
+                                 solver = "nlminb",
+                                 solver.optimx.control = list(maxit = 5000,
+                                                              eval.max= 1000,
+                                                              trace = 1)))
+
+summary(res)
+res$rho$optRes
