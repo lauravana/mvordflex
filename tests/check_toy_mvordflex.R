@@ -9,16 +9,17 @@ TT <- 5 # number of years
 res<- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex2,
-  error.structure = cor_MMO3(~1),
+  error.structure = cor_MMO3_cross(~1),
   coef.constraints = rep(1, q * TT),
   threshold.constraints = rep(1:q, TT),
-  control = mvord::mvord.control(se = FALSE,
+  control = mvord::mvord.control(se = TRUE,
                                  solver = "newuoa",
                                  solver.optimx.control = list(maxit = 5000,
                                                               eval.max= 1000,
                                                               trace = 1)))
 
 summary(res)
+error_structure(res)
 Sigma
 Psi
 

@@ -28,8 +28,8 @@ toeplitz.block <- function(blocks) {
 #' @param perc.miss percentage of missing values which is constant over all responses
 
 simulate_3dim_1rep_for_loop <- function(J, I, TT, P,
-                               beta.matrix, theta, Sigma, Psi,
-                               missings, perc.miss) {
+                                        beta.matrix, theta, Sigma, Psi,
+                                        missings, perc.miss) {
 
   firm_id <- rep(1:I, each = TT)
   year_id <- rep(1:TT, I)
@@ -71,8 +71,8 @@ simulate_3dim_1rep_for_loop <- function(J, I, TT, P,
   # C[10:12,10:12]
   # C[13:15,13:15]
   errors <- do.call("rbind",epsilon)
-                    #lapply(1:nrow(epsilon), function(i)
-      # matrix(epsilon[i, ], byrow = TRUE, ncol = J)))
+  #lapply(1:nrow(epsilon), function(i)
+  # matrix(epsilon[i, ], byrow = TRUE, ncol = J)))
   ytilde <- Xbeta + errors
 
   y.ord <- sapply(seq_len(J), function(j)
@@ -93,40 +93,57 @@ simulate_3dim_1rep_for_loop <- function(J, I, TT, P,
 }
 set.seed(12345)
 
-J  <- 3 ## number of responses
-TT <- 5 ## number of year
-I  <- 100 ## number of firms
-P  <- 2 ## number of covariates
+out <- list()
+for (i in 1:100) {
+  J  <- 3 ## number of responses
+  TT <- 5 ## number of year
+  I  <- 100 ## number of firms
+  P  <- 2 ## number of covariates
 
-missings <- FALSE
-beta.matrix <- matrix(rep(c(2,-1),TT), byrow = TRUE, ncol = P)#cbind(c(2,1,3,-2),c(-1,1,0,1))#matrix(1, ncol = P, nrow = TT)#
+  missings <- FALSE
+  beta.matrix <- matrix(rep(c(2,-1),TT), byrow = TRUE, ncol = P)#cbind(c(2,1,3,-2),c(-1,1,0,1))#matrix(1, ncol = P, nrow = TT)#
   #matrix(rnorm(TT * P, 0, 2), ncol = P, byrow=TRUE)
 
-theta  <- list(c(- 1.0, 0, 1.5),
-               c( -0.5, 0, 0.5),
-               c(- 1.0, 0, 1))
-theta <- theta[1:J]
+  theta  <- list(c(- 1.0, 0, 1.5),
+                 c( -0.5, 0, 0.5),
+                 c(- 1.0, 0, 1))
+  theta <- theta[1:J]
 
 
-Sigma <- diag(J)
-Sigma[upper.tri(Sigma)] <- Sigma[lower.tri(Sigma)] <-
-  seq(0.95, 0.8, length.out = J * (J - 1)/2)
+  Sigma <- diag(J)
+  Sigma[upper.tri(Sigma)] <- Sigma[lower.tri(Sigma)] <-
+    seq(0.95, 0.8, length.out = J * (J - 1)/2)
 
 
-#xi <-  0.9
-xi <- round(runif(J, 0.8, 0.9), 2)
-Psi <- c(0.9, 0.8, 0.7) * diag(J)
+  #xi <-  0.9
+  xiU <- c(0.8, 0.85, 0.9)
+  xiL <- c(0.2, 0.25, 0.35)
 
-## OR FULL PSI
-# repeat {
-# Psi <- matrix(rnorm(J^2), nrow = J)
-# if (all(abs(eigen(Psi)$values) < 1)) break
-# }
+  Psi <- xiU * diag(J)
 
-data_toy_mvordflex2 <- simulate_3dim_1rep_for_loop(J = J, I = I, TT = TT, P = P,
-                          beta.matrix = beta.matrix,
-                          theta = theta,
-                          Sigma = Sigma,
-                          Psi = Psi, missings = missings,
-                          perc.miss = perc.miss)
-save(data_toy_mvordflex2, file = "data/data_toy_mvordflex2.rda")
+  ## OR FULL PSI
+  # repeat {
+  # Psi <- matrix(rnorm(J^2), nrow = J)
+  # if (all(abs(eigen(Psi)$values) < 1)) break
+  # }
+
+  data_toy_mvordflex2 <- simulate_3dim_1rep_for_loop(J = J, I = I, TT = TT, P = P,
+                                                     beta.matrix = beta.matrix,
+                                                     theta = theta,
+                                                     Sigma = Sigma,
+                                                     Psi = Psi, missings = missings,
+                                                     perc.miss = perc.miss)
+  res<- mvordflex(
+    formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
+    data = data_toy_mvordflex2,
+    error.structure = cor_MMO3(~1),
+    coef.constraints = rep(1, q * TT),
+    threshold.constraints = rep(1:q, TT),
+    control = mvord::mvord.control(se = TRUE,
+                                   solver = "newuoa",
+                                   solver.optimx.control = list(maxit = 5000,
+                                                                eval.max= 1000,
+                                                                trace = 1)))
+  out[[i]] <- summary(res)
+}
+save(out, file = "paper/simulation_I_100_T_5_id_1.rda")

@@ -316,11 +316,8 @@ error_structure.cor_MMO3_cross <- function(eobj, type, ...){
     S1
   })
 
-  psi <- lapply(seq_len(nlev), function(l) {diag(z2r(par_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]))})
-
   ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
-    # s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    sigma[[l]]
+    if (t == 0) sigma[[l]] else matrix(0, ndim_j, ndim_j)
   })})
   S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
   S
@@ -348,10 +345,17 @@ error_structure.cor_MMO3_ar1 <- function(eobj, type, ...){
     diag(z2r(par_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]))
   })
 
+  sigma0 <- lapply(seq_len(nlev), function(l) {
+    matrix(solve(diag(ndim_j^2) - kronecker(psi[[l]], psi[[l]]),
+                 c(diag(ndim_j))),
+           ncol = ndim_j)
+  })
+
   ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
     s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    s_ar
+    sigma0[[l]] %*% s_ar
   })})
+
   S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
   S
 }
