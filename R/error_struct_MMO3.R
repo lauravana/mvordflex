@@ -229,17 +229,23 @@ make_Q_cor_MMO3 <- function(tpar, eobj){
     sigma <- crossprod(tLmat)
     sigma
   })
+
   psi <- lapply(seq_len(nlev), function(l) {
     tpar_psi1 <- if(npar1_psi == 0) rep(0, ndim_j) else tpar_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]
     diag(z2r(tpar_psi1))
   })
+  sigma0 <- lapply(seq_len(nlev), function(l) {
+    matrix(solve(diag(ndim_j^2) - kronecker(psi[[l]], psi[[l]]),
+                 c(sigma[[l]])),
+           ncol = ndim_j)
+  })
 
   ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
     s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    #crossprod(s_ar, sigma[[l]])
-    sigma[[l]] %*% s_ar
+    sigma0[[l]] %*% s_ar
   })})
-  S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
+  S <- lapply(seq_len(nlev), function(l)
+    (toeplitz.block(ar_blocks[[l]])))
   S
 }
 
@@ -270,10 +276,16 @@ error_structure.cor_MMO3 <- function(eobj, type, ...){
 
   psi <- lapply(seq_len(nlev), function(l) {diag(z2r(par_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]))})
 
+  sigma0 <- lapply(seq_len(nlev), function(l) {
+    matrix(solve(diag(ndim_j^2) - kronecker(psi[[l]], psi[[l]]),
+                 c(sigma[[l]])),
+           ncol = ndim_j)
+  })
+
   ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
     s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
     # crossprod(s_ar, sigma[[l]])
-    sigma[[l]] %*% s_ar
+    sigma0[[l]] %*% s_ar
   })})
   S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
   S
@@ -338,7 +350,7 @@ error_structure.cor_MMO3_ar1 <- function(eobj, type, ...){
 
   ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
     s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    crossprod(s_ar, diag(ndim_j))
+    s_ar
   })})
   S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
   S
@@ -353,31 +365,8 @@ error_structure.cor_MMO3_ar1 <- function(eobj, type, ...){
 start_values.cor_MMO3 <- start_values.cor_MMO3_cross <- start_values.cor_MMO3_ar1 <-
   function(eobj, y) {
     ## builds starting values for the correlation structure
-    tmp <- rep(1, attr(eobj, "npar"))
-    #ndim_j <- attr(eobj, "ndim_j")
-    #covar <- attr(eobj, "covariate")
-    #nlev <- NCOL(covar)
-
-    # ### starting values with polychoric correlations
-    # sigma_tmp <- diag(ndim_j)
-    # for(i in 1:(ndim_j-1)){
-    #   for(j in (i+1):ndim_j){
-    #     sigma_tmp[i,j] <- suppressWarnings(polycor::polychor(y[,i], y[,j]))
-    #   }
-    # }
-    # sigma_tmp[lower.tri(sigma_tmp)] <- t(sigma_tmp)[lower.tri(sigma_tmp)]
-    # sigma_tmp[is.na(sigma_tmp)] <- 0.1
-    # if(!all(eigen(sigma_tmp)$values >0)){
-    #   sigma_tmp <- suppressWarnings(Matrix::nearPD(sigma_tmp)$mat)
-    # }
-    # tsigma <- suppressWarnings(backtransf_sigmas(sigma_tmp))
-    # tsigma[is.na(tsigma)] <- 0
-    # psi_tmp <- sapply(seq_len(ndim_j), function(j) suppressWarnings(polycor::polychor(y[,j], y[,j + ndim_j])))
-    # tpsi <- atanh(psi_tmp)
-    # tmp <- c(rep(tsigma, nlev), rep(tpsi, nlev))
-    # ## TODO for the given values
-    tmp
-  }
+    rep(1, attr(eobj, "npar"))
+}
 
 # eobj <- error.structure
 # data <- data.mvord
@@ -483,16 +472,7 @@ init_fun.cor_MMO3_ar1 <-
     attr(eobj, "npar") <- npar
 
     r <- eobj$value
-    # ## check value
-    # if (length(r) == 0) r <- numeric(ndim *  (ndim - 1)/2) # if default set to zero
-    # if (length(r) == n) r <- cbind(r)
-    # if (length(r) == npar_psi *  (npar_psi - 1)/2)  r <- matrix(rep.int(r, n), ncol = npar_psi * (npar_psi - 1)/2, byrow= T) # if only one vector of length npar_psi *  (npar_psi - 1)/2 default set to zero
-    #
-    # if (nrow(r) != n) stop("Number of rows of argument value in cor_general() is not equal to number of subjects.")
-    #
-    # ## TODO - check positive semi-definiteness??
-    # ## end check
-    # eobj$value_tmp <- r
+
     if (is.null(eobj$fixed)) eobj$fixed  <- FALSE
     attr(eobj, "npar.cor") <- ifelse(eobj$fixed, 0, npar)
     attr(eobj, "npar.sd") <- 0
@@ -516,35 +496,7 @@ init_fun.cor_MMO3_ar1 <-
 # tpar <- par_sigma
 #tpar <- c(1,2,3)
 
-build_error_struct.cor_MMO3 <-
-  function(eobj, tpar)
-  {
-    ## takes the transformed parameters and builds initializes some attributes of cor_general eobjs
-    ndim <- attr(eobj, "ndim")
-    ndim_j <- attr(eobj, "ndim_j")
-    ndim_t <- attr(eobj, "ndim_t")
-    npar_sigma <- attr(eobj, "npar_sigma")
-    npar_psi <- attr(eobj, "npar_psi")
-    covar <- attr(eobj, "covariate")
-    nlev <- NCOL(covar)
-    npar1 <- attr(eobj, "npar_sigma")/nlev
-    tpar_sigma <- tpar[seq_len(npar_sigma)]
-    tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
-
-    Q <- make_Q_cor_MMO3(tpar, eobj)
-
-
-    corr_pars <- sapply(Q, function(x) x[lower.tri(x)])
-
-    # if (npar1 == 1) dim(corr_pars) <- c(1, nlev)
-
-
-    rVec <- tcrossprod(covar, corr_pars)#tcrossprod(covar, s[lower.tri(s)])#tcrossprod(covar, corr_pars)
-    sd <- rep(1, ndim)
-    return(list(rVec = rVec, sdVec = sd))
-  }
-
-build_error_struct.cor_MMO3_cross <-
+build_error_struct.cor_MMO3 <- build_error_struct.cor_MMO3_cross <-
   build_error_struct.cor_MMO3_ar1 <-
   function(eobj, tpar)
   {
@@ -561,15 +513,21 @@ build_error_struct.cor_MMO3_cross <-
     tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
 
     Q <- make_Q_cor_MMO3(tpar, eobj)
-    corr_pars <- sapply(Q, function(x) x[lower.tri(x)])
 
+    # corr_pars <- Q[[1]][lower.tri(Q[[1]])]
+#
+    corr_pars <- sapply(Q, function(x) {
+      x <- cov2cor(x)
+      x[lower.tri(x)]
+      })
     # if (npar1 == 1) dim(corr_pars) <- c(1, nlev)
 
 
     rVec <- tcrossprod(covar, corr_pars)#tcrossprod(covar, s[lower.tri(s)])#tcrossprod(covar, corr_pars)
-    sd <- rep(1, ndim)
-    return(list(rVec = rVec, sdVec = sd))
+    sdQ  <- sqrt(diag(Q[[1]]))#
+    return(list(rVec = rVec, sdVec = sdQ))
   }
+
 
 finalize_fun.cor_MMO3 <- finalize_fun.cor_MMO3_cross <- finalize_fun.cor_MMO3_ar1 <- function(eobj, tpar) {
   if (eobj$fixed){

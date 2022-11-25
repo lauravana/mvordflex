@@ -274,7 +274,6 @@ transf_par <- function(par, rho) {
                      seq_len(attr(rho[["error.structure"]], "npar"))]
   sigmas <- rho[["build_error_struct"]](rho[["error.structure"]], par_sigma)
   par_beta <- par[rho[["npar.thetas"]] + seq_len(rho[["npar.betas"]])]
-  print(par_beta)
   betatilde <- rho[["constraints_mat"]] %*% par_beta
   par_theta <- rho[["transf_thresholds"]](par[seq_len(rho[["npar.thetas"]])], rho,
                                           betatilde)
