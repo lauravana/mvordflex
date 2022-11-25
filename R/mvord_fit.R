@@ -129,7 +129,7 @@ mvordflex.fit <- function(rho){
       mu <- double(rho$p)
       sc <- rep.int(1, rho$p)
       ind_int <- attr(x_new[[j]], "assign") != 0
-      tmp <- scale_mvord(x_new[[j]][, ind_int, drop = FALSE])
+      tmp <- mvord:::scale_mvord(x_new[[j]][, ind_int, drop = FALSE])
       x_new[[j]][, ind_int] <- tmp$x
       mu[ind_int] <- tmp$mu
       sc[ind_int] <- tmp$sc

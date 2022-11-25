@@ -1,29 +1,40 @@
-\documentclass{article}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{amsfonts}
-\usepackage{bm}
-\usepackage[utf8]{inputenc}
-\usepackage[round]{natbib}
-\usepackage{mathrsfs}
-\usepackage{bbm}
-\usepackage{graphicx}
+\documentclass[times,sort&compress,3p]{elsarticle}
+\journal{Computational Statistics and Data Analysis}
+\usepackage[labelfont=bf]{caption}
+\renewcommand{\figurename}{Fig.}
 
+\usepackage{amsmath,amsfonts,amssymb,amsthm,bm,bbm,bbold,booktabs,color,epsfig,graphicx,hyperref,url}
+\usepackage{mathrsfs}
+
+\theoremstyle{plain}% Theorem-like structures provided by amsthm.sty
+\newtheorem{theorem}{Theorem}
+\newtheorem{exa}{Example}
+\newtheorem{rem}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+
+\usepackage{lscape}
 %\usepackage{apacite}
 
+
 \usepackage{dcolumn}
-\usepackage{booktabs}
-
-\usepackage{footnote}
-\makesavenoteenv{tabular}
-\makesavenoteenv{table}
-
-\usepackage{array,booktabs,ragged2e}
-\usepackage[linkcolor=blue]{hyperref}
+%
+% \usepackage{footnote}
+% \makesavenoteenv{tabular}
+% \makesavenoteenv{table}
+%
+% \usepackage{array,ragged2e}
 \usepackage{tabularx}
-\newcolumntype{C}{>{\centering\arraybackslash}X}
-\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
-\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+% \newcolumntype{C}{>{\centering\arraybackslash}X}
+% \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+% \newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
 
 
 \newcommand{\COV}{\mathrm{cov}}
@@ -41,172 +52,349 @@
 \newcommand{\diag}{\operatorname{diag}\diagfences}
 
 \defcitealias{baselii}{Basel II (2004)}
+\providecommand{\keywords}[1]{\textbf{\textbf{Keywords:}} #1}
 
 
-\addtolength{\oddsidemargin}{-.875in}
-	\addtolength{\evensidemargin}{-.875in}
-	\addtolength{\textwidth}{1.75in}
+% \setlength{\parindent}{0pt}
 
-\setlength{\parindent}{0pt}
-
- \title{Multivariate ordinal regression for multiple repeated measurements}
-%
-\author{Rainer Hirk, Laura Vana}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE, echo = FALSE, eps = TRUE, prefix.string = figs/paper_3dim}
+\SweaveOpts{concordance=TRUE}
+
+\SweaveOpts{echo = FALSE,  eps = TRUE, prefix.string = figs/paper_3dim}
 
 
-<<>>=
+<<eval=TRUE>>=
 calc <- TRUE
 cache <- TRUE
 dig <- 4
+p <- function(x) format(x,digits=2,nsmall=2, scientific = FALSE)
+percent_latex <- function(x, digits = 2, format = "f", ...) {
+  per <- NULL
+  perc <- paste0(formatC(100 * x, format = format,
+                         digits = digits, ...), "\\%")
+  per[is.na(x)] <- "\\multicolumn{1}{c}{\\quad -}"
+  per[!is.na(x)] <- sapply(perc[!is.na(x)], function(z){
+    if(grepl("-", z)){
+      paste0("$-$", substring(z, 2))
+
+  } else z})
+  per
+}
 @
 
-\maketitle
+\begin{frontmatter}
+
+\title{Multivariate ordinal regression for multiple repeated measurements}
+
+\author[1]{Rainer Hirk}
+\author[2]{Laura Vana-G\"ur\corref{mycorrespondingauthor}}
+
+\address[1]{WU Vienna University of Economics and Business, Institute for Statistics and Mathematics}
+\address[2]{TU Wien, Institute of Statistics and Mathematical Methods in Economics}
+
+\cortext[mycorrespondingauthor]{Corresponding author. Email address: \url{laura.vana.guer@tuwien.ac.at}}
 
 
 \begin{abstract}
-TODO
-	\\ \ \\ \textbf{Keywords: }
-%Composite likelihood, credit ratings, failure information, failure prediction model, financial ratios, multivariate ordinal regression model
-
+In this paper we propose a multivariate ordinal regression
+model which allows three-dimensional panel data containing
+both repeated and multiple measurements for a collection of subjects
+to be modeled jointly.
+This is achieved by a multivariate autoregressive structure on
+the errors of the
+latent variables underlying the ordinal responses,
+where we distinguish between the correlations at a single point in time and the
+persistence over time.
+%
+The estimation is performed using composite likelihood methods. We perform a
+simulation study to investigate the quality of the estimates
+and find that the estimation procedure is able to recover the model
+parameters well.
+%
+The model is implemented in \proglang{R} package \pkg{mvordflex} which is an
+extension to the \proglang{R} package \pkg{mvord}.
+%
+Finally, we illustrate the framework on a data set containing firm failure and credit
+ratings information from the rating agencies S\&P and Moody's for US listed companies.
 \end{abstract}
 
-\section*{TODOs}
-\begin{itemize}
-\item contribution: new model, simulation study, empirical analysis
-\item simulation study: repeat with logit link?, with q =5, T=3,10? $\Sigma$ low? relative efficiency?
-\item rewrite model
-\item results:
-\begin{itemize}
-\item spr only
-\item 3raters: interpretation of negative correlations
-\end{itemize}
-\end{itemize}
+\begin{keyword} %alphabetical order
+Composite likelihood \sep
+Multivariate autoregressive error \sep
+Multivariate ordinal regression model \sep
+Panel data
+\MSC[2020] Primary 62J99  \sep
+Secondary 62P20
+\end{keyword}
+
+\end{frontmatter}
+
+
+
+% \maketitle
+
+% \section*{TODOs}
+% \begin{itemize}
+% \item contribution: new model, simulation study, empirical analysis
+% \item simulation study: repeat with logit link?, with q =5, T=3,10? $\Sigma$ low? relative efficiency?
+% \item rewrite model
+% \item results:
+% \begin{itemize}
+% \item spr only
+% \item 3raters: interpretation of negative correlations
+% \end{itemize}
+% \end{itemize}
 
 \section{Introduction}
-The analysis of repeated ordinal outcomes is an important task in various research fields. Various approaches have been employed where the repeated measurements over time are modeled by means of AR(1) errors (cite ...) in a multivariate ordinal regression setting, while multiple measurements at the same time are modeled through a general correlation structure on the latent scale (\cite{Scott02}, \cite{pub:Hirk+Hornik+Vana:2018a}, ...). In this paper we extend the modeling framework of multivariate ordinal regression models by allowing both repeated and multiple measurements in a single model.
-This is imposed by a special structure of the errors where we distinguish between the correlations at a single point in time and the persistence over time. This approach allows us to keep the parameters to be estimated low.
-\\
+The analysis of correlated ordinal outcomes is an important task in a wide range
+of research fields. It is often the case that multiple ordinal outcomes are
+observed repeatedly over a period of time for a collection of subjects.
+%%
+The modeling of such three-dimensional data (possibly in a regression setting)
+should therefore take into account possible dependencies in the cross-section,
+i.e.,~given that the multiple outcomes are observed on the same subjects, as
+well as over time (i.e.,~longitudinal).
 
-In an extensive simulation study we examine the quality of the estimates. For this purpose we simulate ...
+In this paper we propose a multivariate ordinal regression model which can
+capture dependence among both repeated and multiple measurements in an ordinal
+model. We achieve this by imposing a multivariate
+AR(1) correlation structure on the errors of the continuous process underlying
+the discrete ordinal observations.  The multivariate AR(1) process accounts for
+the correlations among the multiple ordinal responses at the same point in time
+as well as for the persistence in each of the multiple responses over time,
+while keeping the number of parameters to be  estimated for the error structure
+low.
+%%
+The estimation of the model parameters is performed by
+composite likelihood methods.
 
+The composite likelihood approach for estimation in multivariate ordinal
+regression-type models is an attractive choice, given that it requires the
+computation of low dimensional integrals instead of the high-dimensional
+integrals necessary for the evaluation of the likelihood function.
+Composite likelihood methods has been employed for ordinal models with
+two-dimensional responses either in the cross-section
+\citep[e.g.,][]{Scott02,bhat2010comparison,Pagui2015,Hirk2021jcr}
+or longitudinally \citep[see e.g.,][]{Varin09,Reusens2017,tuzcuoglu2019,HIRK2022224}.
+A software implementation for the two-dimensional model class
+is provided in the package \pkg{mvord} for \proglang{R}
+\citep{pub:mvord:Hirk+Hornik+Vana:2020}.
+% Similar approaches have been employed where the repeated measurements over time are modeled in a multivariate ordinal regression by means of AR(1) errors \citep{Varin09,tuzcuoglu2019}, while multiple ordinal measurements observed at the same point in time are modeled through a general correlation structure on the latent scale \citep{Scott02, pub:Hirk+Hornik+Vana:2018a}.
+The model proposed in this paper therefore extends the two-dimensional class of
+multivariate regression models to accommodate for a more complex dependence structure.
 
+The literature on dealing with the three-dimensional setting is rather scarce,
+but several approaches have been proposed for a variety of applications.
+\cite{chaubert2008multivariate} propose a dynamic
+multivariate ordinal probit model,
+which assumes a general correlation structure
+for the cross-sectional responses and a general multivariate autoregressive model on
+the time-varying regression coefficients, rather than on the error terms.
+This approach is appropriate if one assumes that the longitudinal
+correlations arise due to the autocorrelation in the regression coefficients
+rather than due to unobserved covariates. Similarly,
+\citep{bartolucci2009multivariate} proposed multivariate model for categorical data where a set of subject-specific
+intercepts assumed to follow a first-order Markov chain.
+Another model class which has been employed are mixed-effect models,
+which account for dependence in the responses by introducing latent effects at different levels of hierarchy. Conditional on these effects, the responses are typically assumed to be independent \citep[see][e.g.,]{LI201925}.
+\cite{cagnone2009latent} propose  latent variable models containing item-specific random effects and a common factor where the relationships between the time-dependent latent variables are modeled using autoregressive processes. A similar approach has been proposed in \cite{pub:djmdr:Vana+Hornik:2021} for a credit risk application
+similar to the one presented in  this paper.
+An application of a model for three-dimensional panel data
+is presented in \cite{SchliepSchaferHawkey+2021+241+254},
+who employ a model with random coefficients to identify the cumulative effects of training and recovery in athletes.
+The estimation of the
+models presented above is typically performed by maximum likelihood methods
+(using EM-type algorithms)
+or, more commonly, by Markov chain Monte Carlo methods in a Bayesian setting,
+where priors must be specified. In either case,
+computations can prove to be rather intensive.
+% The model we propose focuses on modeling
+% directly the error distribution and does not assume a process for time-varying coefficients. More importantly, if models with time-varying coefficients are employed,
+% some type of shrinkage is desirable to avoid overfitting. We propose for this
+% purpose the u
 
-extend \cite{Varin09} and others(Scott, SMAP) by modeling multiple and repeated measurements at the same time. The AR(1) errors of VarinCzado2010 are combined with multiple measurements at the same time.
+In a simulation study we examine the quality of the estimates of the proposed
+model for different scenarios related to the distribution of the errors and
+to the degree of correlation present in the data. The results of the simulation
+study confirm that the composite likelihood methods are able to recover the
+parameters of the model well.
 
-Taking cite SMAP as a basis we extend the model by allowing repeated measurements over time in addition to the multiple measurements at the same time.
-Multivariate probit and multivariate logit link are supported. Composite likelihood methods are employed to estimate the model parameters. In particular, the pairwise likelihood approach allows us to deal with the multiple dimensions by summing over all combinations of the bivariate probabilities.
+We implement this model for 3-dimensional ordinal panel data as an extension to the
+existing \proglang{R} package \pkg{mvord}.
+As in package \pkg{mvord}, the model can be estimated by using a multivariate
+probit and multivariate logit link. Moreover, the regression coefficients and the
+threshold parameters of the ordinal regression are allowed to vary across time
+points and responses, but can be constrained to be equal along some or all
+time-outcome dimensions. Having a ready-to-use implementation will make
+the model class more accessible to users in a variety of application fields.
 
+We illustrate the framework on a data set of US listed firms which have been
+rated by either Standard and Poor's (S\&P) or Moody's. For these firms we record
+the available S\&P and Moody's ratings together with an indicator containing information
+on whether the company went into bankruptcy in the year following the rating
+observations. As covariates we employ financial and market variables commonly
+used in the credit risk literature.
+% The empirical application is an extension of the model
+% in \cite{Hirk2021jcr}, where only the cross-sectional correlation is taken into
+% account.
 
 %STRUCTURE
-Section 2... Section 3...
+The paper is structured as follows: Section~\ref{sec:model} introduces the model
+and Section~\ref{sec:simulation} presents the results of the simulation study.
+Section~\ref{sec:empirical_results} introduces the credit risk application by describing
+the data employed and presenting the results of the estimated model.
+% The simulation results are presented in Section~\ref{sec:simresults}
+The software implementation as an \proglang{R} package is described in Section~\ref{sec:software}.
+Section~\ref{sec:concl} concludes the paper.
 
-\section{The model}
-We extend the approach of multivariate ordinal regression models of \cite{pub:mvord:Hirk+Hornik+Vana:2020} by imposing a novel error structure on the errors on a latent scale. The proposed error structure is constructed by a cross-sectional correlation part and a longitudinal correlation part. The advantage of this approach is that correlation among the multiple measurements at the same time as well as the repeated measurements are modeled.
+\section{The model}\label{sec:model}
+We extend the approach of multivariate ordinal regression models in
+\cite{pub:mvord:Hirk+Hornik+Vana:2020}, which
+model ordinal responses for a collection of
+subjects observed either longitudinally (assuming an AR(1) correlation
+structure, see e.g.,~\cite{HIRK2022224}) or
+cross-sectionally (e.g.,~assuming a general correlation
+structure, see e.g.,~\cite{Hirk2021jcr}).
+In this paper we combine the two modeling settings by imposing a specific
+multivariate autoregressive structure of order one on the errors of the latent
+variables underlying the observed ordinal outcomes. The proposed
+error structure is able to account for both
+cross-sectional and longitudinal dependence among the ordinal responses.
 
-Let $Y_{i,t}^j$ denote an ordinal observation, where $i = 1, \ldots, n$ denotes the subject index, $t = 1, \ldots, T$ the time point and $j \in J_i$ ($J_i$ is a subset of all available outcomes $J$). $q = |J|$ and $q_i = |J_i|$ denotes the cardinality of the sets $J$ and $J_i$.
-We assume the ordinal observation $Y_{i,t}^j$ to be a coarser version of a continuous latent variable $\tilde Y_{i,t}^j$ connected by a vector of suitable threshold parameters $\bm \theta$:
+\subsection{General set-up}
+Let $y_{i,t}^j$ denote an ordinal observation and $i \in \{1, \ldots, n\}$ denotes
+the subject index, $t \in \{1,2,\ldots,T\}$ is a time index among all equidistant
+$T$ time points,
+and $j \in \{1,\ldots q\}$ is the outcome index out
+of all $q$ available outcomes.
+Here we assume the panel data does not contain
+any missing values (all outcomes in all time points are observed for all subjects).
+Note however, that the framework can accommodate for missing values, as will be
+discussed in Section~\ref{sec:subsec:missing}.
+%The number of outcomes in the analysis is denoted by $q = |J|$ and $q_{it} = |J_{it}|$
+%denotes the number of observed outcomes for subject $i$ in year $t$.
+We assume the ordinal observation $y_{i,t}^j$ to be a coarser version of a continuous
+latent variable $\tilde y_{i,t}^j$ connected by a vector of suitable
+threshold parameters. These threshold parameters  $\bm \theta^j_t$ can in the most general case
+be assumed to be time- as well as outcome-varying:
 \begin{align*}
-Y_{i,t}^j = r_{i,t}^j \Leftrightarrow \theta_{r_{i,t}^j-1} < \tilde Y_{i,t}^j \leq \theta_{r_{i,t}^j}, \quad r_{i,t}^j \in \{1, \ldots, K_j\},
+y_{i,t}^j = r \Leftrightarrow \theta^j_{t,r-1} < \tilde y_{i,t}^j \leq \theta^j_{t, r}, \quad r \in \{1, \ldots, K_j\},
 \end{align*}
-where $r_{i,t}^j$ is one of the $K_j$ ordered categories. For each outcome $j$ and time point $t$, we have the following restriction on the threshold parameters $\bm \theta_t^j$: $-\infty \equiv \theta_{t,0}^j < \theta_{t,1}^j < \cdots < \theta_{t,K_j-1}^j \equiv \infty$. The time points $t = t_1, t_2, \ldots T$ are assumed to be equidistant spaced between the observations. For each outcome $j \in J$ we assume the following relationship between $\tilde Y_{i,t}^j$ and $p$-dimensional vector of covariates for subject $i$, time $t$:
+where $r$ is one of the $K_j$ ordered categories of outcome~$j$. For each
+outcome~$j$ and time point~$t$, we have the monotonicity restriction on the
+threshold parameters $\bm \theta_t^j$: $-\infty \equiv \theta_{t,0}^j < \theta_{t,1}^j < \cdots < \theta_{t,K_j-1}^j \equiv \infty$.
+Furthermore, we assume the following linear regression model for
+$\tilde y_{i,t}^j$:
 \begin{align*}
-  \tilde{Y}_{i,t}^j = (\bm{x}_{i,t}^j)^\top {\bm \beta}_{t}^j + \epsilon_{i,t}^j.
+  \tilde{y}_{i,t}^j = (\bm{x}_{i,t}^j)^\top {\bm \beta}_{t}^j + \epsilon_{i,t}^j.
 \end{align*}
-As we assume to have multiple observations at a single point in time $t$, $\bm Y_{i,t}$ is a $q$-dimensional vector with $\bm Y_{i,t} = (Y_{i,t}^1, Y_{i,t}^2, \ldots, Y_{i,t}^{q})^\top$ and
-$$\bm{X}_{i,t}^* = (\bm I_q \otimes \bm x_{i,t}^\top) = \begin{pmatrix}\bm x_{i,t}^\top & \bm 0 & \cdots & \bm 0\\
-\bm 0 & \bm x_{i,t}^\top & \cdots & \bm 0\\
-\vdots & \vdots & \ddots & \vdots\\
-\bm 0 & \bm 0 & \cdots & \bm x_{i,t}^\top\\
-\end{pmatrix},
+i.e.,~$\tilde y_{i,t}^j$ depends linearly on a $p$-dimensional vector of time- and
+outcome-specific covariates $\bm{x}_{i,t}^j$, where ${\bm \beta}_{t}^j$ is a $p$-dimensional vector of covariates which can, in
+the general case, also depend on time and outcome and $\epsilon_{i,t}^j$ is an error term for outcome $j$ of subject $i$ in time $t$.
+
+
+% The time points $t = 1, 2, \ldots T$ are assumed to be equidistant spaced between the observations.
+In the complete case $\bm y_{i,t}$ is a $q$-dimensional vector with
+$\bm y_{i,t} = (y_{i,t}^1, y_{i,t}^2, \ldots, y_{i,t}^{q})^\top$. We define the following
+$(p\cdot q)\times q$ matrix of predictors:
+$$X_{i,t}^* = % (\bm I_q \otimes \bm x_{i,t}^\top) =
+\begin{pmatrix} (\bm x_{i,t}^1)^\top & \bm 0 & \cdots & \bm 0\\
+  \bm 0 & (\bm x^2_{i,t})^\top & \cdots & \bm 0\\
+  \vdots & \vdots & \ddots & \vdots\\
+  \bm 0 & \bm 0 & \cdots & (\bm x^q_{i,t})^\top\\
+\end{pmatrix}.
 $$
-where $\bm x_{i,t}$ is the $p$-dimensional vector of covariates. Assuming $\bm \beta_t^*$ to be a $p\cdot q$-dimensional vector $\bm \beta_t^* =((\bm{\beta}_{t}^1)^\top, (\bm{\beta}_{t}^2)^\top, \ldots, (\bm{\beta}_{t}^q)^\top)^\top$ we have for each $t$ a $q$-dimensional latent process:
+Assuming $\bm \beta_t^*$ to be a $p\cdot q$-dimensional vector
+$\bm \beta_t^* =((\bm{\beta}_{t}^1)^\top, (\bm{\beta}_{t}^2)^\top, \ldots, (\bm{\beta}_{t}^q)^\top)^\top$,
+the $q$ dimensional latent process for each $i$ and $t$ is given by:
 \begin{align*}
-{\bm {\tilde Y}}_{i,t} =  \bm{X}_{i,t}^* \bm \beta_t^* + \bm \epsilon_{i,t},
+{\bm {\tilde y}}_{i,t} =  X_{i,t}^* \bm \beta_t^* + \bm \epsilon_{i,t},
 \end{align*}
-where we assume to have an error structure consisting of two parts:
+where $\bm \epsilon_{i,t}=(\epsilon^1_{i,t},\ldots,\epsilon^q_{i,t})^\top$ is a
+$q$-dimensional vector of errors.
+
+\subsection{Structure of the errors}
+We consider an auto-regressive structure on the $q$-dimensional error terms $\bm \epsilon_{i,t}$:
 \begin{align*}
- \bm  \epsilon_{i,t} = \Psi \bm \epsilon_{i, t-1} + \bm u_{i,t}.
+ \bm  \epsilon_{i,t} = \Psi \bm \epsilon_{i, t-1} + \bm u_{i,t},
 \end{align*}
-The first part $\Psi \bm \epsilon_{i, t-1}$, where the matrix
-  \begin{align*}
-  \bm \Psi =  \diag{\rho_1, \rho_2, \ldots, \rho_{q}}
-\end{align*}
-reflects the time persistence of the latent variables and $\epsilon_{i, t-1}$ is the error of the previous point in time. The second part of the error structure reflects the cross-sectional correlation by assuming
-\begin{align*}
-  u_{i,t} \sim N(\bm 0, \bm\Sigma),
-\end{align*}
-where
-  \begin{align*}
-  \bm \Sigma = \begin{pmatrix} 1 & \rho_{1,2} & \cdots & \rho_{1,q}\\
+where $\Psi =  \diag{\psi_1, \psi_2, \ldots, \psi_{q}}$ is a diagonal matrix
+of persistence parameters for each outcome $j$ with $\vert \psi_j\vert<1$.
+These persistence parameters will capture the
+longitudinal dependence present in the observations.
+Alternatively, if the errors should also depend on lags of other outcomes,
+$\Psi$ can be chosen to be a full matrix with eigenvalues smaller than one in
+absolute value to ensure stationarity.
+We leave such a specification for future research.
+The $q$-dimensional mean-zero error term $\bm u_{i,t}$ is independent and identically
+distributed (iid) among the
+subjects and time points, but correlated among the outcomes to
+capture the
+cross-sectional correlation among the different outcomes. We assume that
+ $\bm u_{i,t}$ follows a multivariate distribution with cumulative distribution function (cdf) $F_q$ which depends on $\Sigma$ and possibly further parameters
+   \begin{align*}
+ \Sigma = \begin{pmatrix} 1 & \rho_{1,2} & \cdots & \rho_{1,q}\\
   \rho_{1,2}& \ddots & \ddots & \rho_{2,q}\\
   \vdots & \ddots & \ddots & \vdots\\
   \rho_{1,q}&  \rho_{2,q}& \cdots & 1
   \end{pmatrix}.
 \end{align*}
+Here $\Sigma$ has a general correlation structure with $q(q-1)/2$ parameters to
+be estimated, where the diagonal elements
+are set to one to ensure identifiability in the marginal
+ordinal models. In this work we consider as choices for $F$ the multivariate normal and the multivariate logistic
+distribution functions \citep[see e.g.,][]{pub:Hirk+Hornik+Vana:2018a,pub:mvord:Hirk+Hornik+Vana:2020}.
 
-
-
-
-
-
-\subsection{Matrix form}
-In order to apply the estimation framework proposed in the \proglang{R} package \pkg{mvord} \citep{pub:mvord:Hirk+Hornik+Vana:2020}, we need to rewrite the proposed model in a matrix form. If we assume that $\bm Y_i$ is a $q \times T$ matrix with
+In the following we will show which dependence structure is implied by the
+above error specification at a
+subject level.
+Assume that $Y_i$ is a $q \times T$ matrix with
 \begin{align*}
-\bm Y_i =  (\bm Y_{i,t_1}, \bm Y_{i,t_2}, \ldots, \bm Y_{i,T}) = \begin{pmatrix}
-Y_{i,t_1}^1 & Y_{i,t_2}^1 & \cdots &  Y_{i,T}^1\\
-Y_{i,t_1}^2 & Y_{i,t_2}^2 & \cdots &  Y_{i,T}^2\\
+ Y_i =  (\bm y_{i,1}, \bm y_{i,2}, \ldots, \bm y_{i,T}) = \begin{pmatrix}
+y_{i,1}^1 & y_{i,2}^1 & \cdots &  y_{i,T}^1\\
+y_{i,1}^2 & y_{i,2}^2 & \cdots &  y_{i,T}^2\\
 \vdots & \vdots & \ddots & \vdots\\
-Y_{i,t_1}^q & Y_{i,t_2}^q & \cdots &  Y_{i,T}^q\\
+y_{i,1}^q & y_{i,2}^q & \cdots &  y_{i,T}^q\\
 \end{pmatrix},
 \end{align*}
-and let $\bm Y_i^*$ be the vectorization of the matrix $\bm Y_i$.
+and let $\bm y_i^*$ be the vectorization of the matrix $Y_i$:
 \begin{align*}
-\bm Y_i^* = \text{vec}(\bm Y_i) =  (Y_{i,t_1}^1, \ldots,  Y_{i,t_1}^{q}, Y_{i,t_2}^1, \ldots, Y_{i,t_2}^{q},  \ldots, Y_{i,t_T}^1, \ldots,  Y_{i,t_T}^{q})^\top
+  \bm y_i^* = \text{vec}(Y_i) =  (y_{i,1}^1, \ldots,  y_{i,1}^{q}, y_{i,2}^1, \ldots,
+              y_{i,2}^{q},  \ldots, y_{i,T}^1, \ldots,  y_{i,T}^{q})^\top.
 \end{align*}
-For the corresponding vector of latent variables $\bm {\tilde Y}_{i}^*$ we have:
-For each subject $i$ we have
+For the corresponding vector of latent variables $\bm {\tilde y}_{i}^*$ we have:
 \begin{align}\label{eqn:mvord}
-  \bm {\tilde Y}_{i}^* =  \bm{X}_{i}^{*} \bm \beta^{*} + \bm \epsilon_{i}^*,
+  \bm {\tilde y}_{i}^* =  X_{i}^{*} \bm \beta^{*} + \bm \epsilon_{i}^*,
+\end{align}
+where $X_{i}^{*}$ is a block-diagonal matrix with
+%%
+$$
+X_{i}^{*} =
+\begin{pmatrix}
+X_{i,1}^* & \bm 0 & \cdots & \bm 0\\
+\bm 0 &  X_{i,2}^* & \cdots & \bm 0\\
+\vdots & \vdots & \ddots & \vdots\\
+\bm 0 & \bm 0 & \cdots & X_{i,T}^*\\
+\end{pmatrix},
+$$
+%%
+$\bm \beta^{*}$ is a $p\cdot q \cdot T$-dimensional vector of regression coefficients
+$\bm \beta^{*} =((\bm{\beta}_{1}^*)^\top, (\bm{\beta}_{2}^*)^\top, \ldots, (\bm{\beta}_{T}^*)^\top)^\top$.
+The $qT$-dimensional mean zero error terms $\bm\epsilon_i^*=(\bm \epsilon_{i,1}^\top, \bm  \epsilon_{i,2}^\top, \ldots, \bm \epsilon_{i,T}^\top)^\top$ are iid across subjects and have a
+cdf $F$ with covariance matrix:
+\begin{align}\label{eq:corstruct}
+ \Sigma^*=
+\begin{pmatrix}
+ \Sigma  & \Psi  \Sigma &  \Psi^2  \Sigma & \cdots  & \Psi^{T-1}  \Sigma\\
+(\Psi\Sigma)^\top & \Sigma  &  \Psi\Sigma  & \cdots &  \Psi^{T-2} \bm \Sigma\\
+(\Psi^2 \Sigma)^\top & (\Psi \Sigma)^\top &\Sigma & \cdots &  \Psi^{T-3} \Sigma\\
+\vdots & \ddots &  \ddots & \ddots & \vdots\\
+( \Psi^{T-1} \Sigma)^\top & \cdots & \cdots & (\Psi\Sigma)^\top & \Sigma
+\end{pmatrix}.
 \end{align}
 
 
-where $\bm{X}_{i}^{*}$ is a block-diagonal matrix with
-$$\bm{X}_{i}^{*} = \begin{pmatrix}\bm X_{i,t_1}^* & \bm 0 & \cdots & \bm 0\\
-\bm 0 & \bm X_{i,t_2}^* & \cdots & \bm 0\\
-\vdots & \vdots & \ddots & \vdots\\
-\bm 0 & \bm 0 & \cdots & \bm X_{i,T}^*\\
-\end{pmatrix}.
-$$
-
-The vector of regression coefficients $\bm \beta^{*}$ is a $p\cdot q \cdot T$-dimensional vector  $\bm \beta^{*} =((\bm{\beta}_{t_1}^*)^\top, (\bm{\beta}_{t_2}^*)^\top, \ldots, (\bm{\beta}_{T}^*)^\top)^\top$
-% = \begin{pmatrix}
-% \bm\beta_{t_1}^1 & \bm\beta_{t_2}^1 & \cdots &  \bm\beta_{t_T}^1\\
-% \bm\beta_{t_1}^2 & \bm\beta_{t_2}^2 & \cdots &  \bm\beta_{t_T}^2\\
-% \vdots & \vdots & \ddots & \vdots\\
-% \bm\beta_{t_1}^q & \bm\beta_{t_2}^q & \cdots &  \bm\beta_{t_T}^q\\
-% \end{pmatrix}$
-
-% TODO check $\top$, $q_i$ vs $q$
-
-%(optional allow $\bm{\beta}_{t} = (\bm{\beta}_{t}^S, \bm{\beta}_{t}^M, \bm{\beta}_{t}^F, \bm{\beta}_{t}^D)$ with $\tilde{x}_{i,t} = (\bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t})$
-
-
-and $bm\epsilon_i^*$ is a vector of errors with proposed error structure:
-\begin{align*}
-\bm\epsilon_i^* = (\bm \epsilon_{i,1}\top, \bm  \epsilon_{i,2}\top, \ldots, \bm \epsilon_{i,T}\top) \sim MVN_{(q\cdot T)\times (q\cdot T)} \left( \bm 0, \begin{pmatrix}
-\bm \Sigma  & \bm \Psi \bm \Sigma & \bm \Psi^2 \bm \Sigma & \cdots  & \bm \Psi^{T-1} \bm \Sigma\\
-(\bm \Psi \bm \Sigma)^\top & \bm \Sigma  & \bm \Psi \bm \Sigma  & \cdots & \bm \Psi^{T-2} \bm \Sigma\\
-(\bm \Psi^2 \bm \Sigma)^\top & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma & \cdots & \bm \Psi^{T-3} \bm \Sigma\\
-\vdots & \ddots &  \ddots & \ddots & \vdots\\
-(\bm \Psi^{T-1} \bm \Sigma)^\top & \cdots & \cdots & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma
-\end{pmatrix}
-\right).
-\end{align*}
-
-With a slight modification of the model input, the model of Equation~\ref{eqn:mvord} can be estimated with the framework proposed in \cite{pub:mvord:Hirk+Hornik+Vana:2020}. The modified code is available upon request.
 %
 %
 % \begin{align*}
@@ -237,144 +425,354 @@ With a slight modification of the model input, the model of Equation~\ref{eqn:mv
 
 
 
-\subsection{Composite Likelihood estimation}
-For parameter estimation of model \ref{eqn:mvord} we use a composite
+\subsection{Pairwise likelihood estimation}
+For a given vector of parameters $\bm\delta$ containing
+the threshold parameters, regression coefficients and parameters of the error structure,
+the likelihood is given by the product of the following multivariate probabilities
+over all subjects:
+%
+\begin{align}\label{eqn:likfct}
+\mathscr{L} (\bm\delta) &= \prod_{i=1}^n \Prob \bigg(\bigcap_{\substack{j\in
+   {1,\ldots,q}\\  t \in \{1, \ldots, T\}}}
+   \{y_{i,t}^j = r_{i,t}^j\}\bigg).
+\end{align}
+In the complete case, each multivariate probability corresponds to a
+$q\times T$-dimensional integral
+\begin{align*}
+\Prob \bigg(\bigcap_{\substack{j\in
+   {1,\ldots,q}\\  t \in \{1, \ldots, T\}}} \{y_{i,t}^j = r_{i,t}^j\}\bigg) =
+ \int_{D_{i}} f_{qT}(\bm{\tilde{y}^*}_{i}; \bm \delta) d^{qT}
+ \bm{\tilde{y}^*}_{i},
+\end{align*}
+%
+where $D_{i} =
+\prod_{t\in \{1, \ldots, T\}} \prod_{j\in{1,\ldots,q}}  (\theta^j_{t,r_{i,t}^j-1},
+\theta^j_{t,r_{i,t}^j})$ is a
+  Cartesian product (here $r_{i,t}^j$ denotes the observed ordinal class for subject~$i$,
+  time~$t$ and outcome~$j$)
+  %$w_{i}$ are subject-specific non-negative
+  %weights (which are set to one in the default case)
+  and $f_{qT}$
+  is the multivariate density of the error terms
+  $\bm\epsilon_i^*$ corresponding to the distribution function $F_{qT}$.
+
+
+For parameter estimation of model \eqref{eqn:mvord} we use a composite
 likelihood approach, where we approximate the full likelihood by a
 pseudo-likelihood constructed from lower dimensional
-marginal distributions \citep{varin_overview}. For a given vector of parameters $\bm\delta$ the likelihood is given by:
-
-\begin{align*}
-\mathscr{L} (\bm\delta) &= \prod_{i=1}^n \Prob\bigg(\bigcap_{\substack{j\in
-   J_{i}\\  t \in \{1, \ldots, T\}}}
-   \{Y_{i,t}^j = r_{i,t}^j\}\bigg)^{w_{i}} =\prod_{i=1}^n \bigg(
- \int_{D_{i}} f_{i}(\bm{\widetilde{Y^*}}_{i}; \bm
- \delta)d^{q_{i}}\widetilde{\bm{Y^*}}_{i}\bigg)^{w_{i}},
-\end{align*}
-
-
-where $D_{i} =
-\prod_{t\in \{1, \ldots, T\}} \prod_{j\in J_{i}}  (\theta_{r_{i,t}^j-1}, \theta_{r_{i,t}^j})$ is a
-  TODO Cartesian product, $w_{i}$ are subject-specific non-negative
-  weights (which are set to one in the default case) and $f_{i}$
-  is the $q\times T$-dimensional density of the error terms
-  $\bm\epsilon_i^*$. We approximate this full likelihood by a pairwise likelihood which is
-constructed from bivariate marginal distributions. If the number of
-observed outcomes for subject~$i$ is less than two ($q_i<2$), the
-univariate marginal distribution enters the likelihood. The pairwise
-log-likelihood function is obtained by:
+marginal distributions \citep{varin_overview}.
+We approximate the full likelihood above by a pairwise likelihood which is
+constructed from bivariate marginal distributions. The pairwise
+likelihood function is given by the product of the bivariate probabilities
+corresponding to all pairs of elements in $\bm y_i^*$:
 \begin{align}\label{eqn:logpl}
-  p\ell(\bm\delta)= \sum_{i=1}^n w_i \biggl[&  \sum_{k=1}^{(q\cdot T)-1} \sum_{l=k+1}^{(q\cdot T)}  \log\left(\Prob((\bm Y_{i}^*)_k = (\bm r_{i})_k,
-    (\bm Y_{i}^*)_l = (\bm r_{i})_l\right) \biggr].
+  \mathscr{PL}(\bm\delta)= \prod_{i=1}^n &  \prod_{k=1}^{(q\cdot T)-1}
+  \prod_{l=k+1}^{q\cdot T} \Prob\biggl((\bm y_{i}^*)_k = (\bm r_{i})_k,
+    (\bm y_{i}^*)_l = (\bm r_{i})_l\biggr),
 \end{align}
-Denoting by $f_{i,1}$ and $f_{i,2}$ the uni- and bivariate density functions
-corresponding to the error distribution, the uni- and bivariate
-probabilities are given by:
+where $(\bm y_{i}^*)_k$ denotes the $k$-th element of vector $\bm y^*_{i}$ and
+ $(\bm r_{i})_k$ denotes the $k$-th element of subject-specific vector
+ $\bm r_{i}= (r_{i,1}^1, \ldots,  r_{i,1}^{q}, r_{i,2}^1, \ldots, r_{i,2}^{q},
+ \ldots, r_{i,T}^1, \ldots,  r_{i,T}^{q})^\top$.
+
+Given that the pairwise likelihood for subject~$i$ consists of the product of
+${q\cdot T\choose 2}$ bivariate probabilities, for cases where $q\cdot T$ is large
+this can prove to be computationally burdensome. In order to speed-up the pairwise
+likelihood computation, one option is to only consider pairs which lie close
+to each other in time, as they are the ones who are most informative on the
+persistence parameter. With a slight abuse of notation we denote $k_t$
+the time index and $k_j$ the outcome index corresponding to the $k$-th element in the vector $(\bm y_{i}^*)$ (e.g.,~for $k=2$ $k_t=1$ and $k_j = 2$). The expression
+in \eqref{eqn:logpl} is adjusted to:
+\begin{align}\label{eqn:logpladj}
+  \mathscr{PL}(\bm\delta)= \prod_{i=1}^n &  \prod_{k=1}^{(q\cdot T)-1}
+  \prod_{l=k+1}^{q\cdot T}\biggl[\Prob\biggl((\bm y_{i}^*)_k = (\bm r_{i})_k,
+    (\bm y_{i}^*)_l = (\bm r_{i})_l\biggr) \biggr]^{\mathbb 1(l_t - k_t \leq c)}
+\end{align}
+where $c$ is a pre-defined lag and $\mathbb 1$ is the indicator function.  This
+strategy of considering only pairs of observations less distant than $c$ time
+points has also
+been employed in \cite{Varin09}.
+% Denoting by $f_{i,1}$ and $f_{i,2}$ the uni- and bivariate density functions
+% corresponding to the error distribution, the uni- and bivariate
+% probabilities are given by:
+% \begin{align*}
+% \Prob(Y_{ik} &= r_{ik}, Y_{il} = r_{il})
+% =\displaystyle\int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}}
+% \displaystyle\int_{\theta_{l,r_{il}-1}}^{\theta_{l,r_{il}}} f_{i,2}(\widetilde{Y}_{ik},\widetilde{Y}_{il};\bm\delta)
+% d\widetilde{Y}_{ik}d\widetilde{Y}_{il},\\ \Prob(Y_{ik} &= r_{ik}) =\displaystyle
+% \int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}} f_{i,1}(\widetilde{Y}_{ik}; \bm\delta) d\widetilde{Y}_{ik}.
+% \end{align*}
+
+The maximum pairwise likelihood estimates are obtained by direct maximization using general purpose optimization tools. A sandwich estimator is employed to estimate the Godambe information matrix, which represents the covariance matrix of the parameter estimates. Model comparison can be performed using composite likelihood information criteria \citep[for more details see e.g.,][]{Varin2005}.
+
+\subsection{Missing values}\label{sec:subsec:missing}
+In the presence of missing values in the $q\cdot T$ vector of responses of subject~$i$,
+we employ the same strategy as \cite{pub:Hirk+Hornik+Vana:2018a} and
+construct the pairwise likelihood only from the bivariate probabilities
+corresponding to all pairs of \emph{observed} responses. If the number of
+observed outcomes for subject~$i$ is less than two, the univariate marginal
+distribution enters the likelihood instead of the bivariate ones.
+This approach assumes that the missing value mechanism is completely at random.
+
+\subsection{Constraints on the threshold and regression coefficients}\label{sec:subsec:constraints}
+Constraints can be set on the vector of regression coefficients and on
+the threshold parameters,
+which in the most general case are assumed to be time- and outcome-varying.
+We define two $q\cdot T$-dimensional linear predictors by making again use of the matrix notation:
+$$
+\bm\eta^\text{upper}_{i}= B_i^\text{upper}\bm\theta^* - X_i^*\bm \beta^* = Z^{\text{upper}}_i\bm\kappa^* ,
+\quad
+\bm\eta^\text{lower}_{i}= B_i^\text{lower}\bm\theta^* - X_i^*\bm \beta^*= Z^{\text{lower}}_i\bm\kappa^*,
+\quad
+Z^{\text{.}}_i=(B_i^\text{.}, -X_i^*),
+\quad
+\bm\kappa^*=((\bm\theta^*)^\top, (\bm\beta^*)^\top)^\top,
+$$
+where
+$\bm\theta^*=((\bm{\theta}^1_{1})^\top,\ldots,(\bm{\theta}^q_{1})^\top, \ldots,
+(\bm{\theta}^1_{T})^\top,\ldots,(\bm{\theta}^q_{T})^\top)^\top
+$ and the matrices $B_i^\text{lower}$ and $B_i^\text{upper}$ are
+$(q\cdot T)\times (T\sum_{j=1}^q (K_j-1))$ block diagonal binary matrices
+%
 \begin{align*}
-\Prob(Y_{ik} &= r_{ik}, Y_{il} = r_{il})
-=\displaystyle\int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}}
-\displaystyle\int_{\theta_{l,r_{il}-1}}^{\theta_{l,r_{il}}} f_{i,2}(\widetilde{Y}_{ik},\widetilde{Y}_{il};\bm\delta)
-d\widetilde{Y}_{ik}d\widetilde{Y}_{il},\\ \Prob(Y_{ik} &= r_{ik}) =\displaystyle
-\int_{\theta_{k,r_{ik}-1}}^{\theta_{k,r_{ik}}} f_{i,1}(\widetilde{Y}_{ik}; \bm\delta) d\widetilde{Y}_{ik}.
+B^\text{upper}_{i}&=\diag{
+  (\bm b_{i,1}^{1,\text{upper}})^\top,\ldots,
+  (\bm b_{i,1}^{q,\text{upper}})^\top, \ldots,
+  (\bm b_{i,T}^{1,\text{upper}})^\top,\ldots,
+  (\bm b_{i,T}^{q,\text{upper}})^\top}\\
+  B^\text{lower}_{i}&=\diag{
+  (\bm b_{i,1}^{1,\text{lower}})^\top,\ldots,
+  (\bm b_{i,1}^{q,\text{lower}})^\top, \ldots,
+  (\bm b_{i,T}^{1,\text{lower}})^\top,\ldots,
+  (\bm b_{i,T}^{q,\text{lower}})^\top}
 \end{align*}
+%
+where the vector $\bm b_{i,t}^{j,\text{upper}}$ has length $K_j-1$ and contains a one in the $r_{i,t}^j$-th position if $r_{i,t}^j\in \{1,\ldots,K_j-1\}$, else zero; the vector $\bm b_{i,t}^{j,\text{lower}}$ has length $K_j-1$ and contains a one in the $(r_{i,t}^j - 1)$-th position if $r_{i,t}^j\in \{2,\ldots,K_j\}$, else zero.
+% vector of length $(K_j)$ containing a one in the $r_{i,t}^j$-th position.
+% $$
+% b_{i,t}^j = (1,0,0,0), y_{i,t}^j=1, b_{i,t}^{j,\text{upper}}=(1,0,0),y_{i,t}^j=1,b_{i,t}^{j,\text{lower}} = (0,0,0), y_{i,t}^j=1
+% $$
 
+The probabilities in the likelihood function in Equation~\ref{eqn:likfct} can then be expressed as:
+$$
+\Prob \bigg(\bigcap_{\substack{j\in
+   {1,\ldots,q}\\  t \in \{1, \ldots, T\}}} \{y_{i,t}^j = r_{i,t}^j\}\bigg) = F_{qT}(Z_i^\text{upper}\bm\kappa^*|\Sigma^*, \ldots) - F_{q T}(Z_i^\text{lower}\bm\kappa^*|\Sigma^*, \ldots).
+$$
 
-\section{Simulation study}
-see simulations\_results.pdf
+Assuming that $\tilde{\bm\kappa} = (\tilde{\bm\theta}^\top, \tilde{\bm\beta}^\top)^\top$ is the reduced $(h\times 1)$ vector of thresholds and coefficients to be estimated, the linear predictors can be rewritten as:
+$$
+\bm\eta^\text{.}_{i}=  Z^{\text{.}}_i H \tilde{\bm\kappa}
+$$
+where $H$ is a contrast matrix of dimension $(T\cdot\sum_{j=1}^q(K_j-1) + q\cdot T \cdot p) \times h$. For example, the $H$ matrix for a model where all thresholds should be constant over time and one set of regression coefficients should be employed for all $t$ and $j$ would
+be of dimension
+$(T\sum_{j=1}^q(K_j-1) + q\cdot T \cdot p) \times (\sum_{j=1}^q(K_j-1) + p)$:
+%
+$$
+H=\left(\begin{array}{c c}
+\underbrace{(1,\ldots,1)^\top }_{T\, \text{times}}\otimes
+I_{\sum_{j=1}^q(K_j-1)}
+& \bm 0_{T\sum_{j=1}^q(K_j-1) \times p}\\
+\bm 0_{ (q \cdot T\cdot p) \times p}&
+\underbrace{(1,\ldots,1)^\top }_{q\cdot T\, \text{times}}\otimes  I_{p}
+\end{array}
+\right),
+$$
+where $I_{.}$ denotes the identity matrix, $\bm 0$ is the zero matrix and
+$\otimes$ denotes the Kronecker product.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Simulation study}\label{sec:simulation}
+% see simulations\_results.pdf
 
-In order to investigate the quality of pairwise likelihood estimates of the proposed model we performed an extensive simulation study. Within this study we simulated data from the proposed model with various parameter settings. In all settings, we simulated two regression coefficients ($p = 2$), which vary for each of the $T$ time points. We perform the simulation study with two different number of time points, $T = 5$ and $T = 10$. The threshold parameters for each of the three outcomes ($q = 3$) are assumed to be constant over all time points. All outcomes have four categories ($K = 4$), which leads to three threshold parameters to be estimated for each outcome. In order to check the robustness of the error structure we simulated four different combinations of the inter-rater correlation matrix $\Sigma$ and the time-persistence matrix $\Psi$:
-
+In order to investigate the quality of pairwise likelihood estimates of the
+proposed model we perform a simulation study. Within this study we simulate
+data from the proposed model with various parameter settings.
+We consider a panel data with 3 different ordinal outcomes ($q=3$).
+The panel data contains $n=1000$ subjects and $T=10$ time points.
+In all settings,
+we simulated two covariates from a standard normal distribution ($p = 2$),
+which vary for each of the $T$ time points, but do not vary with the outcomes
+$j=1,2,3$.
+The vector of regression coefficients is also constant among all time point and outcomes
+$\bm\beta=(1,-1)^\top$.
+All outcomes have four categories ($K = 4$).
+The threshold parameters vary among the three outcomes but are assumed to be constant over all time points:
+$\bm\theta^1=(-\infty,- 1, 0, 1.5,\infty)$,
+$\bm\theta^2=(-\infty,- 0.5, 0, 0.5,\infty)$,
+$\bm\theta^3=(-\infty,- 1, 0, 1,\infty)$.
+%We perform the simulation study with two different number of time points, $T = 5$ and $T = 10$. .
+In order to check the performance of the estimates for the error structure,
+we simulate four different
+combinations of the inter-rater correlation matrix $\Sigma$ and the
+time-persistence matrix $\Psi$:
+%
 \begin{align*}
-  \bm \Sigma \text{ low} =
+  \Sigma_\text{low} =
   \begin{pmatrix}
-    1 & 0.1 & 0.2\\
-    0.1 & 1 & 0.3\\
-    0.2 & 0.3 & 1
-  \end{pmatrix},
-   \bm \Sigma \text{ high} =
+    1.000 & 0.100 & 0.200\\
+    0.100 & 1.000 & 0.300\\
+    0.200 & 0.300 & 1.000
+  \end{pmatrix},&\qquad
+ \Sigma_\text{high} =
   \begin{pmatrix}
-    1 & 0.95 & 0.875\\
-    0.95 & 1 & 0.8\\
-    0.875 & 0.8 & 1
+    1.000 & 0.950 & 0.875\\
+    0.950 & 1.000 & 0.800\\
+    0.875 & 0.800 & 1.000
   \end{pmatrix}\\
-     \bm \Psi \text{ low} =
+  \Psi_\text{low} =
     \begin{pmatrix}
-    0.25 & 0 & 0\\
-    0 & 0.23 & 0\\
-    0 & 0 & 0.3
-  \end{pmatrix},
-   \bm \Psi \text{ high} =
+    0.200 & 0& 0\\
+    0 & 0.250 & 0\\
+    0 & 0 & 0.350
+  \end{pmatrix},&\qquad
+  \Psi_\text{high} =
   \begin{pmatrix}
-    0.85 & 0 & 0\\
-    0 & 0.83 & 0\\
-    0 & 0 & 0.9
+    0.800 & 0 & 0\\
+    0 & 0.850 & 0\\
+    0 & 0 & 0.900
   \end{pmatrix}
 \end{align*}
+%
+The four different scenarios for the error structure are
+$\Sigma$ low -- $\Psi$ low, $\Sigma$ low -- $\Psi$ high,
+$\Sigma$ high -- $\Psi$ low, $\Sigma$ high -- $\Psi$ high.
+We perform the simulation study for two different error distribution
+functions: i) multivariate normal  (which gives rise to the multivariate probit link
+in the ordinal regression) and ii) the multivariate logistic distribution from \cite{OBrien2004}
+with 8 degrees of freedom (which  gives rise to the multivariate logit link).
+In total we therefore consider 8 scenarios.
 
-The combinations are $\Sigma$ low - $\Psi$ low; $\Sigma$ low - $\Psi$ high; $\Sigma$ high - $\Psi$ low, $\Sigma$ high. We perform the simulation study for two different link functions, the multivariate probit link and the multivariate logit link. For all settings, we performed 100 repetitions with 1000 subjects each. We calculated the mean estimate of the 100 repetitions, the absolute percentage bias\footnote{For values of zero we do not report the APB.} ($APB = |(\text{true parameter} - \text{mean estimate})/\text{true parameter}|$), the mean asymptotic standard error, and the sample standard error.
+For all scenarios we replicated the simulation of the data sets 100 times.
+We calculated the mean parameter estimate of the repetitions,
+the absolute percentage bias\footnote{$\text{APB} = |(\text{true parameter} - \text{mean estimate})/\text{true parameter}|$. Note that for values of zero we do not report the APB.},
+the mean asymptotic standard error and the standard deviation of the parameters
+over the 100 repetitions.
+%%
+Results for the four scenarios are provided in Tables~\ref{tab:sim_t_10_logit_probit_id_4},
+~\ref{tab:sim_t_10_logit_probit_id_3},
+~\ref{tab:sim_t_10_logit_probit_id_2},
+~\ref{tab:sim_t_10_logit_probit_id_1}.
+%%
+For all scenarios we recover very well the true parameters of the proposed model,
+with absolute percentage biases ranging from 0.01\% to 2\% for most parameters.
+There are negligible differences to be observed between the different correlation
+scenarios. In general the APB of the low correlation parameters is higher,
+but the absolute bias is comparable across low and high correlation values.
+Mean asymptotic standard errors and sample standard errors are similar in
+magnitude for all estimated parameters, with small differences being observed
+for the threshold and regression parameters. It is to be noted that the
+number of repetitions is not particularly large.
+Both the estimation using the logit and probit link perform well
+in recovering the parameters of interest.
 
-For all parameter settings we achieve excellent parameter estimates of the proposed model.
-APB ranges from .. to .. . Mean asymptotic standard errors and sample standard errors are similar in magnitude for all estimated parameters.
-Results of the simulation study are available in appendix .. .
 
 
-relative efficiency?
+%\begin{landscape}
+<<eval=TRUE, results=tex>>=
+# setwd("~/svn/baR/trunk/Projects/OENB_Credit_Risk/3dim/simulation/simulation_3dim/final")
+library(xtable)
+nrep <- 100
+for (id in 4:1) {
+  for (link in c("probit", "logit")) {
+     load(file.path("..", "simulation", "final_tables", sprintf("table_simulation_link_%s_nrep_100_I_1000_T_10_id_%i.rda", link, id)))
+     if (link == "probit") tab1 <- tab
+     else tab1 <- cbind(tab1, tab)
+  }
+  addtorow <- list()
+  addtorow$pos <- list(0)
+  colnames(tab)[4] <- "\\multicolumn{1}{p{1.4cm}}{\\centering Mean Asym SE}"
+  addtorow$command <- paste0('& & \\multicolumn{4}{c}{Multivariate probit link}& \\multicolumn{4}{c}{Multivariate logit link}\\\\
+                             \\cmidrule(lr){3-6}\\cmidrule(lr){7-10}\\\\',
+                             '& True &',paste(rep(colnames(tab)[-1], 2), collapse = "&"), '\\\\'
+                       )
+  title_text <- sprintf("Simulation results based on %i repetitions, $n=1000$, $T = 10$, $q=3$ ($\\Sigma$ %s, $\\Psi$ %s).",
+                           nrep,
+                           ifelse(id %in% c(1,2), "high", "low"),
+                           ifelse(id %in% c(1,3), "high", "low"))
+  rownames(tab1) <- gsub("xi", "psi", rownames(tab1))
+  print(xtable(tab1[,-6], digits = 4,
+               label =  sprintf("tab:sim_t_10_logit_probit_id_%i", id),
+               caption = title_text),
+        booktabs = TRUE,
+        include.colnames=FALSE,
+        caption.placement = "top",
+        math.style.negative = TRUE,
+        add.to.row=addtorow,
+        sanitize.text.function = function(x) x)
+}
+@
+%\end{landscape}
 
 
+\section{Empirical analysis}\label{sec:empirical_results}
+We apply the proposed model to corporate credit ratings from
+Standard and Poor's (S\&P) and Moody's as well as to a failure information
+indicator over the period of 2003--2013. The flexible framework allows to
+account for the time persistence of the ratings and failures, as well as for
+the correlation among the raters and failure dimensions.
 
-
-\section{Empirical analysis}
-We apply the proposed model to corporate credit ratings from Standard and Poor's (S\&P) and Moody's as well as to a failure information indicator over the period of 2003--2013. The flexible framework allows to account for the time persistence of the ratings and failures, as well as for the correlation among the raters and failure dimensions.
-
-\subsection{Data}
-In this paper we use S\&P long-term issuer credit ratings from the Compustat-Capital IQ Credit Ratings database as well as issuer credit ratings from Moody's. S\&P provides its ratings on a scale with 21
-non-default categories ranging from AAA to C. Moody’s uses a different scale by assigning 21 rating classes ranging from Aaa to the default class C. The failure indicator is constructed based on the default data from the
-UCLA-LoPucki Bankruptcy Research Database and the Mergent issuer default file. A binary
-failure indicator is constructed in the following way: A default is recorded in a year if a firm filed for bankruptcy under Chapter 7 or Chapter 11 or the firm receives a default rating in the year following the rating observation from
-one of the CRAs. This definition is similar to definition of \cite{campbell2008search}, and to the promoted
-default definition in \cite{baselii}
-
+\subsection{Data}\label{sec:data}
+In this paper we use S\&P long-term issuer credit ratings from the
+Compustat-Capital IQ Credit Ratings database as well as issuer credit ratings
+from Moody's. S\&P provides its ratings on a scale with 21
+non-default categories ranging from AAA to C. Moody's uses a different scale by
+assigning 21 rating classes ranging from Aaa to the default class C. The failure
+indicator is constructed based on the default data from the
+UCLA-LoPucki Bankruptcy Research Database and the Mergent issuer default file.
+A binary failure indicator is constructed in the following way: a default is
+recorded in a year if a firm filed for bankruptcy under Chapter 7 or
+Chapter 11 or the firm receives a default rating from one of the CRAs in the year
+following the rating observation. This definition is similar to definition of
+\cite{campbell2008search}, and to the promoted
+default definition in \cite{baselii}.
 
 For the construction of the firm-level variables we make use the Compustat
-and CRSP databases together with the corresponding linking files available on Wharton research data services (WRDS). We use the pre-calculated financial
+and CRSP databases together with the corresponding linking files available on
+Wharton research data services (WRDS). We use the pre-calculated financial
 ratios available in the \textit{Financial Ratios Suite}.
-We include in the analysis the universe of Compustat \/CRSP US
-corporates which have at least one S\&P rating observation or a rating observation of Moody's in the period from
-2003 to 2013. We exclude financial, utility and real estate firms from the data set. The end of year
-ratings are merged to the financial ratios on a
+We include in the analysis the universe of Compustat/CRSP US
+corporates which have at least one S\&P rating observation or a
+rating observation of Moody's in the period from
+2003 to 2013 $(T=11)$. We exclude financial, utility and real estate firms from
+the data set. The end of year ratings are merged to the financial ratios on a
 calendar year basis. We perform this by assigning the
-latest entry available before year end ofthe financial ratios to the end-of-year ratings.  For the computation of the market variables we use daily stock
+latest financial statement available before year endsto the end-of-year ratings.
+For the computation of the market variables we use daily stock
 price data available an CRSP. Winsorization of all explanatory variables at the 99th percentile as well as
 for ratios with negative values at the 1st percentile is conducted.
 
-As explanatory variables we make use of the variables selected by \cite{Tian2015}. The authors apply the least absolute shrinkage and selection operator (LASSO) on a set of .. variables selected from the literature on credit risk modeling.
-<<>>=
+As explanatory variables we make use of the $p=7$ variables proposed by
+\cite{Tian2015}, who select these variables based on a statistical variable
+selection exercise and show that improved performance when predicting defaults
+in a static setting compared to other established models in the credit risk
+literature.
+<<eval=TRUE>>=
 library(MASS)
 library(mvordflex)
 library(copula)
 library(xtable)
-setwd("~/svn/baR/trunk/Projects/OENB_Credit_Risk/3dim/paper")
-load(file.path("..", "..",  "data", "data_eoy_rating_all_def_ind_finrat_mkt.rda"))
+# setwd("~/svn/baR/trunk/Projects/OENB_Credit_Risk/3dim/paper")
+load(file.path("..",  "data", "data_eoy_rating_all_def_ind_finrat_mkt.rda"))
 
 ratios <- c("R_SIGMA", "R_lct_at", "R_debt_at", "R_ni_mta", "R_lt_mta", "R_PRICECAP",  "R_EXRET")
 
 dat <- data_eoy_rating_all_def_ind_finrat_mkt
-
+dat <- subset(dat, fyear >= 2003 &  fyear <= 2013)
 #preprocessing
 dat$failInd <- ordered(dat$failInd, levels = c(1,0), labels = c("D", "ND"))
-dat <- dat[(dat$fyear >= 2003) & (dat$fyear <= 2013),]
 dat$fyear <- factor(dat$fyear)
 dat$Moodys7 <- ordered(dat$Moodys7)
 
 ind_noNA <- which(apply(is.na(dat[,ratios]), 1, sum) == 0)
 dat <- dat[ind_noNA ,]
 @
-
+%
 \begin{table}[h!]
 \centering
 %\tiny{
 \begin{tabular}{lD{.}{.}{5}D{.}{.}{5}D{.}{.}{5}D{.}{.}{5}D{.}{.}{5}D{.}{.}{5}D{.}{.}{5}}
 \toprule
-<<results = tex, echo = FALSE>>=
+<<eval=TRUE, results = tex, echo = FALSE>>=
 tab <- apply(dat[,ratios],2, summary)
 colnames(tab) <- ratios
 
@@ -384,14 +782,14 @@ print(xtable::xtable(matrix(c("", gsub("_", "/", gsub("R_", "", ratios))), ncol 
 \midrule
 \multicolumn{7}{c}{Entire data set}\\
 \midrule
-<<results = tex, echo = FALSE>>=
+<<eval=TRUE, results = tex, echo = FALSE>>=
 print(xtable::xtable(tab, label = "tab:ratios", caption = "Summary statistics of all ratios for all firms.", digits = 4),
   only.contents = T, math.style.negative = F, include.colnames = F, rotate.colnames =  FALSE, sanitize.colnames.function = function(x) paste0("\\multicolumn{1}{c}{\\rotatebox{90}{",x, "}}"), booktabs = TRUE, hline.after = NULL)
 @
 \midrule
 \multicolumn{7}{c}{Failure Group}\\
 \midrule
-<<results = tex, echo = FALSE>>=
+<<eval=TRUE, results = tex, echo = FALSE>>=
 tab <- apply(dat[dat$failInd == "D",ratios],2, summary)
 colnames(tab) <- ratios
 
@@ -403,25 +801,76 @@ print(xtable::xtable(tab, label = "tab:ratios", caption = "Summary statistics of
 %}
 \caption[Summary statistics]{This table displays summary statistics of all variables for the entire data set and the failure group.}
 \label{tab:ratios}
-%\caption{This table displays summary statistics of all variables for the failure group.}
-%\label{tab:ratios_D}
 \end{table}
-Table~\ref{tab:ratios} summarizes the explanatory variables $SIGMA, lct/at, debt/at, ni/mta, lt/mta, PRICECAP and EXRET$ for the entire data set and the failure group. We observe noticeable higher means and medians for the variables $SIGMA, debt/at, lt/mta$ in the failure group compared to the entire sample. Differently for variables $ni/mta$ and $EXRET$ we observe lower means and medians for the failure group. These differences are in line with the literature CITE and as expected.
+Table~\ref{tab:ratios} summarizes the explanatory variables
+idiosyncratic risk ($SIGMA$),
+short-term liabilities-to-assets ratio ($lct/at$),
+debt-to-assets ratio ($debt/at$),
+net income-to-market assets ($ni/mta$),
+total liabilities-to-market assets ratio ($lt/mta$),
+stock price capped at 15\$ \sloppy ($PRICECAP$) and
+excess return over the ARCA/AMEX index ($EXRET$) for the entire data set and the
+failure group. We observe noticeable higher means and medians for the variables
+$SIGMA$, $debt/at$, $lt/mta$ in the failure group compared to the entire sample,
+while firms in the failure group have on average lower $ni/mta$,  $PRICECAP$,
+$EXRET$ and $lct/at$ values.
 
-In total, the obtained data set comprises \Sexpr{length(unique(dat$gvkey))} firms with
-\Sexpr{nrow(dat)} firm-year observations .
-<<results = tex>>=
-rat_distr <- rbind(table(dat$SPR7, dat$fyear),
+In total, the obtained data set comprises
+\Sexpr{length(unique(dat$gvkey))} firms with
+\Sexpr{nrow(dat)} firm-year observations.
+<<eval=TRUE, results = tex>>=
+dr_all <- prop.table(table(dat$failInd, dat$fyear), 2)[1, ] * 100
+dr_s <- prop.table(table(dat$failInd[!is.na(dat$SPR7)],
+                         dat$fyear[!is.na(dat$SPR7)]),
+                   2)[1, ] * 100
+dr_m <- prop.table(table(dat$failInd[!is.na(dat$Moodys7)],
+                         dat$fyear[!is.na(dat$Moodys7)]), 2)[1, ] * 100
+
+rat_distr <- rbind(table(dat$failInd, dat$fyear),
+                   dr_all,
+                   table(dat$SPR7, dat$fyear),
                    table(dat$failInd[!is.na(dat$SPR7)], dat$fyear[!is.na(dat$SPR7)]),
-                   table(dat$Moodys7, dat$fyear),
-                   table(dat$failInd[!is.na(dat$Moodys7)], dat$fyear[!is.na(dat$Moodys7)]),
-                   table(dat$failInd, dat$fyear))
+                   dr_s,
+                   round(table(dat$Moodys7, dat$fyear)),
+                   table(dat$failInd[!is.na(dat$Moodys7)],
+                         dat$fyear[!is.na(dat$Moodys7)]),
+                   dr_m
+                   )
 
-rat_distr <- cbind(rat_distr, "total" = rowSums(rat_distr))
 
-xtable(rat_distr, digits = 0)
-#TODO add vertical names SPR, Moodys, Def.
+
+rat_distr <- cbind(rat_distr, "Total" = rowSums(rat_distr))
+rat_distr[grep("dr_", rownames(rat_distr)), "Total"] <-
+  rat_distr[grep("dr_", rownames(rat_distr))-2, "Total"]/( rat_distr[grep("dr_", rownames(rat_distr))-2, "Total"]+ rat_distr[grep("dr_", rownames(rat_distr))-1, "Total"]) * 100
+
+rat_distr  <- cbind.data.frame(" "=c("Fail", "No Fail", "Fail. Rate (%)",  "C/CCC",  "B",      "BB"
+                                 ,     "BBB",    "A",      "AA",     "AAA",   "Fail",
+                                 "No Fail" ,  "Fail. Rate (%)","Ca/Caa","B",      "Ba",     "Baa",
+                                 "A",      "Aa",     "Aaa",    "Fail",      "No Fail",
+                                  "Fail. Rate (%)"),
+                             rat_distr)
+
+mdigits <- matrix(rep(c(0, 0, 2, rep(0, 7), 0, 0, 2, rep(0, 7),0, 0, 2), 14),
+                  ncol=14)
+
+addtorow <- list()
+addtorow$pos <- list(0, 3, 10, 13, 20)
+addtorow$command <- c("\\midrule & \\multicolumn{12}{c}{Failure distribution in entire sample}\\\\",
+                      "\\midrule & \\multicolumn{12}{c}{S\\&P rating distribution}\\\\ \\midrule ",
+                      "\\midrule & \\multicolumn{12}{c}{Distribution of failures  among the firms rated by S\\&P}\\\\ \\midrule ",
+                      "\\midrule & \\multicolumn{12}{c}{Moody's rating distribution}\\\\ \\midrule ",
+                      "\\midrule & \\multicolumn{12}{c}{Distribution of failures  among the firms rated by Moody's}\\\\ \\midrule "
+)
+
+print(xtable(rat_distr, digits = mdigits,
+             caption = "Failure and rating distribution in the sample years.",
+             label = "tab:ratdist"),
+      add.to.row = addtorow, booktabs = TRUE,
+      include.rownames = FALSE)
 @
+Table~\ref{tab:ratdist} contains the failure and rating distribution for the
+sample years 2003--2013. We observe that the sample contains a failure rate of
+below 1\%. The rating distribution for both S\&P and Moody's is unimodal with a mode in the triple and double B rating classes.
 Note that we do not observe all the ratings at all the time points. For
 \Sexpr{round(sum(!is.na(dat$SPR7))/nrow(dat),2)*100}\% of the observations we observe S\&P ratings, while we have a coverage of
 \Sexpr{round(sum(!is.na(dat$Moodys7))/nrow(dat),2)*100}\% for Moody's.
@@ -434,12 +883,50 @@ Note that we do not observe all the ratings at all the time points. For
 % As covariates we refer to the literature and use the variables selected by \cite{Tian2015}. The authors applied the least absolute shrinkage and selection operator (LASSO) in order to select the variables of a failure prediction model. The selected ratios are SIGMA, lct at, debt at, ni mta, lt mta, PRICECAP, EXRET
 
 \subsection{Model fit}
-We fit the proposed multivariate ordinal regression model on a set of preselected covariates of \cite{Tian2015}. We fit separate sets of regression coefficients and threshold parameters for S\&P ratings, Moody's ratings and the failure dimension. Due to the high number of parameters to be estimated, we remove the modifiers in the credit ratings and obtain a rating scale with each 7 classes for S\&P and Moody's. The regression coefficients and threshold parameters are assumed to be constant over time, while the time persistance is captured by means of an autocorrelation parameter for S\&P ratings, Moody's ratings and the failure dimension. Additionally, we capture the inter-rater correlations among S\&P, Moody's and the failure dimension. The results of the model are shown in tables ...
+We fit the proposed multivariate ordinal regression model to the credit risk
+data set using the covariates introduced in Section~\ref{sec:data}.
+The data set contains three outcomes, namely the S\&P ratings, Moody's ratings
+and the failure indicator $(q=3)$.
+We make the following parameterization choices: for each response
+we fit separate sets of regression coefficients. This is motivated by the fact that
+in the literature not all covariates are expected to have the same effect on the
+ratings and on the failure dimensions.
+Similarly, we fit three different sets of threshold parameters. Due to the high
+number of parameters to be estimated, we remove the modifiers in the credit
+ratings and obtain a rating scale with each 7 classes for S\&P and Moody's.
+%
+Furthermore, the regression coefficients and threshold parameters are assumed
+to be constant over time. This gives rise to a contrast matrix $H$ with  $374 = 11 \times (6 + 6 + 1) + 3 \times 11 \times 7$ rows and $34 = 6 + 6 + 1 + 7 \times 3$ columns.
 
-<<>>=
+$$
+H=
+\left(\begin{array}{c}
+\underbrace{(1,\ldots,1)^\top }_{T=11\, \text{times}}\otimes
+  \left(\begin{matrix}
+  \diag{I_6, I_6, 1}& \bm 0_{13 \times 21} \\
+  \end{matrix}\right)\\
+\underbrace{(1,\ldots,1)^\top }_{T=11\, \text{times}}\otimes
+  \left(\begin{matrix}
+  \bm 0_{21 \times 13}&\diag{I_7, I_7, I_7}\\
+  \end{matrix}\right)
+\end{array}\right).
+$$
+
+<<eval=TRUE>>=
+## oversample defaults
+# set.seed(1234)
+# samp_def_rate <- 0.02
+# nfirm <- sum(dat$failInd == "D")/length(unique(dat$gvkey))
+# n_def <- ceiling((samp_def_rate * nfirm - sum(dat$failInd == "D")) / (1 - samp_def_rate))
+# dat[sample(with(dat, which(failInd == "ND")), n_def , replace = TRUE), ]
+# dat <- rbind(dat, dat[sample(with(dat, which(failInd == "D")), n_def , replace = TRUE), ])
+# dim(dat)
+# mean(dat$failInd == "D")
 data_long <- rbind(cbind("rating" = dat$SPR7, "rater_id" = "SPR", dat),
                    cbind("rating" = dat$Moodys7, "rater_id" = "Moodys", dat),
                    cbind("rating" = dat$failInd, "rater_id" = "failInd", dat))
+
+
 data_long$gvkey <-  as.factor(data_long$gvkey)
 
 formula_mvord_3dim <- as.formula(paste0("MMO3(rating, gvkey, fyear, rater_id) ~ ", paste(c(0, ratios), collapse = " + ")))
@@ -466,7 +953,7 @@ TT <- 11
 
 
 
-save_model(mvordflex::mvord(formula = formula_mvord_3dim,
+save_model(mvordflex::mvordflex(formula = formula_mvord_3dim,
                             data = data_long,
                             link = mvlogit(),
                             error.structure = cor_MMO3(~1),
@@ -476,7 +963,7 @@ save_model(mvordflex::mvord(formula = formula_mvord_3dim,
                             control = mvord.control(se = TRUE, solver = "newuoa", solver.optimx.control = list(maxit = 100000, trace = 1))
 ),
 "res_MMO3_constr",
-FILE = "model_fits/res_MMO3_tianratios_logit.rda")
+FILE = "../model_fits/res_MMO3_tianratios_logit.rda")
 
 res_logit <- res_MMO3_constr
 
@@ -484,7 +971,7 @@ res_logit <- res_MMO3_constr
 # error_structure(res_logit, type = "sigmas")
 
 
-save_model(mvordflex::mvord(formula = formula_mvord_3dim,
+save_model(mvordflex::mvordflex(formula = formula_mvord_3dim,
                             data = data_long,
                             error.structure = cor_MMO3(~1),
                             coef.constraints = rep(c(1,2,3),TT),
@@ -493,107 +980,673 @@ save_model(mvordflex::mvord(formula = formula_mvord_3dim,
                             control = mvord.control(se = TRUE, solver = "newuoa", solver.optimx.control = list(maxit = 100000, trace = 1))
 ),
 "res_MMO3_constr",
-FILE = "model_fits/res_MMO3_tianratios.rda")
+FILE = "../model_fits/res_MMO3_tianratios.rda")
 
 res_probit <- res_MMO3_constr
 
 # summary(res_probit)
 # error_structure(res_probit, type = "sigmas")
+# data_long$fyear_rater_id <- factor(paste0(data_long$fyear, data_long$rater_id))
+# aggregate(rating ~ fyear_rater_id, data = data_long, table)
+
+
+load("../model_fits/res_MM03_identity_logit.rda")
+load("../model_fits/res_MM03_ar1_logit.rda")
+#AIC(res_logit, res_ident_logit, res_ar1_logit)
+# res_probit <- get(load("../model_fits/res_MMO3_tianratios.rda"))
+# load("../model_fits/res_MM03_identity_probit.rda")
+# load("../model_fits/res_MM03_ar1_probit.rda")
+# load("../model_fits/res_MM03_cross_probit.rda")
+# AIC(res_probit, res_ident, res_cross_probit,res_ar1_probit)
 @
 
-
-<<results=tex>>=
+We estimate this model specification with both the logit and probit link and
+find the model with logit link to have a better fit based on the composite likelihood Akaike information criterion (\Sexpr{round(AIC(res_logit), 2)} logit link
+ vs. \Sexpr{round(AIC(res_probit), 2)} probit link; note that a lower value implies
+ a better fit) and composite likelihood Bayesian information criterion (\Sexpr{round(BIC(res_logit), 2)} logit link
+ vs. \Sexpr{round(BIC(res_probit), 2)} probit link).
+The estimated parameters of the  model with logit link are shown in Tables~\ref{tab:coef},~\ref{tab:thresh},~\ref{tab:corr},~\ref{tab:psi}.
+<<eval=TRUE,results=tex>>=
 invisible(capture.output(coef <- summary(res_logit)$coefficients))
 coef$stars <- ifelse(coef[,4] >= 0.1, "", ifelse(coef[,4] >= 0.05, ".", ifelse(coef[,4] >= 0.01, "*", ifelse(coef[,4] >= 0.05, "**",  "***"))))
 
 
+coef$stars[coef$stars == ""] <- "\\phantom{***}"
+coef$stars[coef$stars == "*"] <- "*\\phantom{**}"
+coef$stars[coef$stars == "**"] <- "**\\phantom{*}"
 
 seq_coef <- seq(1,nrow(coef), by = 3)
-tab_coef <- cbind(paste0(round(coef[seq_coef,1],4), " (", round(coef[seq_coef,2], 4), ")", coef$stars[seq_coef]),
-      paste0(round(coef[seq_coef + 1,1], 4), " (", round(coef[seq_coef + 1,2], 4), ")", coef$stars[seq_coef + 1]),
-      paste0(round(coef[seq_coef + 2,1], 4), " (", round(coef[seq_coef + 2,2], 4), ")", coef$stars[seq_coef + 2]))
-
-colnames(tab_coef) <- c("SPR", "Moody's", "Failure")#res_logit$rho$y.names
-rownames(tab_coef) <- res_logit$rho$x.names
-xtable(tab_coef, caption = "This table displays the estimated regression coefficients.", label = "tab:coef")
+tab_coef <- cbind(
+  paste0(format(round(coef[seq_coef,1],4),nsmall=4), " (",
+         format(round(coef[seq_coef,2], 4),nsmall=4), ")", coef$stars[seq_coef]),
+  paste0(format(round(coef[seq_coef + 1,1], 4),nsmall=4), " (",
+         format(round(coef[seq_coef + 1,2], 4),nsmall=4), ")",
+         coef$stars[seq_coef + 1]),
+  paste0(format(round(coef[seq_coef + 2,1], 4),nsmall=4), " (",
+         format(round(coef[seq_coef + 2,2], 4),nsmall=4), ")",
+         coef$stars[seq_coef + 2]))
+tab_coef <- gsub("-", "$-$", tab_coef)
+colnames(tab_coef) <- c("S\\&P", "Moody's", "Failure")#res_logit$rho$y.names
+rownames(tab_coef) <- gsub("_", "/", gsub("R_", "", res_logit$rho$x.names))
+print(xtable(tab_coef,
+             caption = "This table displays the estimated regression coefficients for the three outcomes: S\\&P ratings, Moody's ratings and failure indicator.",
+             label = "tab:coef",
+             align = "lrrr"),
+      booktabs = TRUE,
+      sanitize.text.function = function(x) x)
 @
-
-<<results=tex>>=
+%
+<<eval=TRUE,results=tex>>=
 invisible(capture.output(thresh <- summary(res_logit)$thresholds))
 
 thresh$stars <- ifelse(thresh[,4] >= 0.1, "", ifelse(thresh[,4] >= 0.05, ".", ifelse(thresh[,4] >= 0.01, "*", ifelse(thresh[,4] >= 0.05, "**",  "***"))))
 
+thresh$stars[thresh$stars == ""] <- "\\phantom{***}"
+thresh$stars[thresh$stars == "*"] <- "*\\phantom{**}"
+thresh$stars[thresh$stars == "**"] <- "**\\phantom{*}"
 
 
-tab_thresh <- cbind(c("C/CCC|B"  ,"B|BB"  , "BB|BBB" ,"BBB|A" , "A|AA" ,"AA|AAA"), paste0(round(thresh[1:6,1],4), " (", round(thresh[1:6,2], 4), ")", thresh$stars[1:6]),
-      c("Ca/Caa|B"  ,"B|Ba"  , "Ba|Baa" ,"Ba|A" , "A|Aa" ,"Aa|Aaa"),paste0(round(thresh[7:12,1], 4), " (", round(thresh[7:12,2], 4), ")", thresh$stars[7:12]),
-      c("D|ND", rep("", 5)), c(paste0(round(thresh[13,1], 4), " (", round(thresh[13,2], 4), ")", thresh$stars[13]),rep("", 5)))
-
-# colnames(tab_thresh) <- c("SPR", "Moody's", "Failure")#res_logit$rho$y.names
+tab_thresh <- cbind(
+  c("C/CCC|B"  ,"B|BB"  , "BB|BBB" ,"BBB|A" , "A|AA" ,"AA|AAA",
+    "Ca/Caa|B"  ,"B|Ba"  , "Ba|Baa" ,"Ba|A" , "A|Aa" ,"Aa|Aaa",
+    "Fail|Non Fail"),
+  paste0(format(round(thresh[,1],4),nsmall=4), " (",
+         format(round(thresh[,2], 4),nsmall=4), ")",
+         thresh$stars))
+tab_thresh <- gsub("-", "$-$", tab_thresh)
+colnames(tab_thresh) <- c(" ", "Estimate")#res_logit$rho$y.names
 # rownames(tab_thresh) <- res_logit$rho$x.names
-xtable(tab_thresh, caption = "This table displays the estimated threshold parameters.", label = "tab:thresh")
+addtorow <- list()
+addtorow$pos <- list(0, 6, 12)
+addtorow$command <- c('\\midrule \\multicolumn{2}{c}{S\\&P}\\\\ ',
+                      "\\midrule  \\multicolumn{2}{c}{Moody's}\\\\ \\midrule ",
+                      ' \\midrule \\multicolumn{2}{c}{Failure}\\\\  \\midrule ')
+
+print(xtable(tab_thresh,
+             caption = "This table displays the estimated threshold parameters.",
+             label = "tab:thresh",
+             align = "llr"),
+      include.rownames = FALSE,
+      add.to.row = addtorow,
+      booktabs = TRUE,
+      sanitize.text.function = function(x) x)
 @
-
-
-<<results=tex>>=
+%
+<<eval=TRUE,results=tex>>=
 invisible(capture.output(error_struct <- summary(res_logit)$error.structure))
 
 error_struct$stars <- ifelse(error_struct[,4] >= 0.1, "", ifelse(error_struct[,4] >= 0.05, ".", ifelse(error_struct[,4] >= 0.01, "*", ifelse(error_struct[,4] >= 0.05, "**",  "***"))))
 
+error_struct$stars[error_struct$stars == ""] <- "\\phantom{***}"
+error_struct$stars[error_struct$stars == "*"] <- "*\\phantom{**}"
+error_struct$stars[error_struct$stars == "**"] <- "**\\phantom{*}"
 
 
-tab_error_struct <- paste0(round(error_struct[,1],4), " (", round(error_struct[,2], 4), ")", error_struct$stars)
+tab_error_struct <-
+  paste0(format(round(error_struct[,1],4),nsmall=4), " (",
+         format(round(error_struct[,2], 4),nsmall=4), ")",
+         error_struct$stars)
 
-corr <- diag(3)
-corr[upper.tri(corr)] <-corr[lower.tri(corr)] <- paste0(round(error_struct[1:3,1],4), " (", round(error_struct[1:3,2], 4), ")", error_struct$stars[1:3])#error_struct[1:3,1]
+corr <- matrix("", nrow=3, ncol=3)
+corr[upper.tri(corr)] <-corr[lower.tri(corr)] <-
+  tab_error_struct[1:3]
+diag(corr) <- paste0(" ", format(1, nsmall=4), " \\phantom{(0.0000)}\\phantom{***}"
+)
+psi <- matrix("", nrow=3, ncol=3)
+diag(psi) <-   tab_error_struct[-(1:3)]
 
-psi <- diag(3)
-diag(psi) <- paste0(round(error_struct[4:6,1],4), " (", round(error_struct[4:6,2], 4), ")", error_struct$stars[4:6])#diag(error_struct[4:6,1])
+corr <- gsub("-", "$-$", corr)
+psi <- gsub("-", "$-$", psi)
 
 colnames(corr) <- c("SPR", "Moody's", "Failure")#res_logit$rho$y.names
 rownames(corr) <- c("SPR", "Moody's", "Failure")
 colnames(psi) <- c("SPR", "Moody's", "Failure")#res_logit$rho$y.names
 rownames(psi) <- c("SPR", "Moody's", "Failure")
 
-xtable(corr, caption = "This table displays the cross-sectional correlation parameters of the errors.", label = "tab:corr")
-xtable(psi, caption = "This table displays the time-persistence parameters of the errors.", label = "tab:psi")
+print(xtable(corr, caption = "This table displays the estimated matrix $\\Sigma$, which contains the cross-sectional correlation parameters of the errors.", label = "tab:corr"),
+      booktabs = TRUE,
+      sanitize.text.function = function(x) x)
+
+print(xtable(psi, caption = "This table displays the estimated matrix $\\Psi$ containing the time-persistence parameters of the errors.", label = "tab:psi"),
+      booktabs = TRUE,
+      sanitize.text.function = function(x) x)
 @
 
 
-Threshold parameters
-
-coefficients
-
-correlation
-
-\subsection{Empirical results}
-TODO
-discuss model fit here
-? only analyse results or do some performance analysis in addition?
+% \subsection{Empirical results}
+% TODO
+% discuss model fit here
+% ? only analyse results or do some performance analysis in addition?
 
 %GENERAL
-The proposed models allows to gain insights into several directions. Firstly, the model provides information on the difference in the covariates among the three outcomes S\&P ratings, Moody's ratings and the failure indicator. Note that in ordinal model absolute location and absolute scale are not identifiable and hence, direct comparisons among the different dimensions have to be performed carefully. Nevertheless, when accounting for differences in the scales of the dimensions, the model allows to compare the variables of the ratings and the failure dimension.
-Secondly, differences among the threshold parameters can be observed. Thirdly, the novel error structure gives insights into the time-persistence of the separate dimension as well as the correlations among the dimensions.
+% The proposed models allows to gain insights into several directions.
+The model provides information on the difference in the covariates among the
+three outcomes: S\&P ratings, Moody's ratings and the failure indicator.
+Given that both the threshold and the regression parameters are allowed to vary
+with the outcome, direct comparisons among the magnitude of
+coefficients and thresholds of the different outcomes have to be
+performed with care. This is due to the fact that in ordinal models absolute
+location and absolute scale are not identifiable.
+% Nevertheless, when accounting for differences in the scales of the dimensions, the model allows to compare the variables of the ratings and the failure dimension.
+Finally, the proposed error structure gives insights into the time-persistence
+of the separate outcomes as well as the contemporaneous correlations among the three outcomes.
 
 %COVARIATES
-When analyzing the regression coefficients displayed in Table~\ref{tab:coef}, we find that the signs for almost all coefficients are as expected.
-Only the variables  debt/at and ni/mta are non-significant TODO reason??? due to the model specification? high se's only from 0 to 1
-TODO explain sign here like in joint paper
-explain sign differences as in joint model paper
+When analyzing the regression coefficients displayed in Table~\ref{tab:coef},
+we find that the signs for most of the significant coefficients are as expected.
+The variables  $lct/at$, $debt/at$ and $ni/mta$ are non-significant for the
+failure dimensions. This is likely due to the low number of failures present
+in the sample.
+The excess return $EXRET$ variable has a positive sign, meaning that higher
+excess returns lead to higher values in the default process.
+On the other hand, this variable has
+a negative sign for the rating dimensions, which can imply that,
+in the rating process,
+firms with high excess returns can be considered riskier.
+%TODO explain sign here like in joint paper
+%explain sign differences as in joint model paper
 
 %THRESHOLD
-When analyzing the threshold parameters, we find some differences between Moody's and S\&P ratings thresholds. As the results in Table~\ref{tab:thresh} show, we observe lower thresholds estimated for S\&P compared to Moody's. This translates into the fact that Moody's tends to be more conservative in the speculative grade regions, while the differences in the investment grade categories are non significant.
-TODO plot thresholds?
+Qualitatively, the coefficients of the two rating dimensions are rather similar,
+so we can assume that they have a similar scale. This allows us to have a look
+at the threshold parameters for these two outcomes
+and cautiously make some interpretations.
+As the results in Table~\ref{tab:thresh} show, we observe lower thresholds
+estimated for S\&P compared to Moody's in the speculative grades. This can
+translate into Moody's being more conservative in the speculative grade regions.
+Note that the differences in the investment grade categories are negligible.
+% TODO plot thresholds?
 
 
 
 %error structure
-The estimated error structure provides information on the inter-rater dependence as well as on the time persistence of the ratings. Table~\ref{tab:corr} displays the inter-rater correlations of the fitted model. As expected, we find a high correlation of \Sexpr{round(error_struct[1,1],2)} among the S\&P and Moody's ratings and  a lower correlation between the raters and the failure indicator. We observe a correlation of \Sexpr{round(error_struct[2,1],2)} between S\&P and the failure dimension and a correlation of \Sexpr{round(error_struct[3,1],2)} between Moody's and the failure dimension.
-The second component of the error structure provides information on the time persistence for each dimension seperately. The estimated coefficients are displayed in Table~\ref{tab:psi}. The time persistence is high for the raters and non-significantly different from 0 for the failure dimension. We observe for the time persistence parameter an estimated value of \Sexpr{round(error_struct[4,1],2)} for S\&P and \Sexpr{round(error_struct[5,1],2)} for Moody's.
+The estimated error structure provides information on the inter-rater dependence
+as well as on the time persistence of the ratings. Table~\ref{tab:corr} displays
+the inter-rater correlations of the fitted model. As expected, we find a high
+correlation of \Sexpr{round(error_struct[1,1],2)}
+among the S\&P and Moody's ratings and  a lower correlation between the raters
+and the failure indicator. We observe a correlation of
+\Sexpr{round(error_struct[2,1],2)}
+between S\&P and the failure dimension and a correlation of
+\Sexpr{round(error_struct[3,1],2)}
+between Moody's and the failure dimension.
+The second component of the error structure provides information on the time
+persistence for each dimension separately. The estimated coefficients are displayed
+in Table~\ref{tab:psi}. The time persistence is high for the raters and
+non-significantly different from 0 for the failure dimension (likely due to the
+limited number of defaults in the sample).
+We observe for the time persistence parameter an estimated value of
+\Sexpr{round(error_struct[4,1],2)}
+for S\&P and
+\Sexpr{round(error_struct[5,1],2)}
+for Moody's.
 
-\section{Conclusion}
-TODO
+% MODEL COMPARISON
 
+When comparing the panel data model with simpler models based on the composite
+likelihood AIC we observe that the proposed model
+(AIC: \Sexpr{round(AIC(res_logit), 2)},
+ BIC~\Sexpr{round(BIC(res_logit), 2)})
+is indeed preferred over simpler specifications.
+We consider a model which takes no correlation into account,
+(AIC: \Sexpr{round(AIC(res_ident_logit), 2)},
+ BIC: \Sexpr{round(BIC(res_ident_logit), 2)})
+a model which takes no longitudinal dependence into account
+%TODO
+(AIC: \Sexpr{round(AIC(res_ident_logit)-9940.3, 2)},
+ BIC: \Sexpr{round(BIC(res_ident_logit)-9940.3, 2)})
+ and a model which takes no cross-sectional dependence into account
+(AIC: \Sexpr{round(AIC(res_ar1_logit), 2)},
+ BIC: \Sexpr{round(BIC(res_ar1_logit), 2)}).
+Note that the longitudinal specification improves the fit more than the
+cross-sectional specification.
+
+<<echo=FALSE, eval=FALSE>>=
+library(Matrix)
+op <- par(mfrow = c(1,2))
+model_used <-  res_ar1_logit#res_logit #
+yobs <- sapply(model_used$rho$y, as.numeric)
+yhat <- sapply(marginal_predict(model_used, type="class"), as.numeric)
+
+wkappa <- sapply(seq_len(ncol(yobs)), function(i) {
+  psych::cohen.kappa(cbind(obs = yobs[,i], pred = yhat[,i]))$weighted.kappa
+  })
+
+acc <- sapply(seq_len(ncol(yobs)), function(i) {
+  tab <- table(obs = yobs[,i], pred = yhat[,i])
+  sum(diag(tab))/sum(tab)
+  })
+
+wkappa_mat <- matrix(wkappa, nrow = 3)
+plot(2003:2013, wkappa_mat[1, ], col = 1, lty = 1, ylim = c(0,1), type = "l")
+lines(2003:2013, wkappa_mat[2, ], col = "blue", lty = 2, ylim = c(0,1), type = "l")
+lines(2003:2013, wkappa_mat[3, ], col = "orange", lty = 3, ylim = c(0,1), type = "l")
+legend("topright", lty = 1:3, col = c("black", "blue", "orange"), c("SPR", "Moody's", "Failure"))
+par(op)
+@
+
+\section{Software implementation}\label{sec:software}
+
+The proposed model is implemented as an extension package to the \proglang{R}
+package \pkg{mvord} and is available at \url{https://github.com/lauravana/mvordflex}.
+The  package named
+\pkg{mvordflex} can be installed using, e.g.,:
+%
+<<eval=FALSE, echo=TRUE>>=
+library("devtools")
+install_github("https://github.com/lauravana/mvordflex")
+library("mvordflex")
+@
+%
+A new multiple measurement object \code{MMO3} is implemented, to which the
+three dimensional panel data can be passed,  in addition to the existing  multiple measurement object \code{MMO} and
+\code{MMO2}. The \code{MMO3} object requires the user to
+specify the name of the column containing the ordinal observations,
+the subject index ($i$), the time index ($t$) and the multiple measurement index
+($j$).
+Note that all the ordinal observations for all outcomes should be contained in one
+column of the data frame to be passed to the model. Moreover, the covariates
+are allowed to vary for each $i,t,j$.
+The \code{MMO3} object constitutes the left hand side of the formula object.
+%
+<<eval=FALSE, echo=TRUE>>=
+formula <- MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + ... + Xp
+@
+%
+The proposed correlation structure is implemented as a new error structure named
+\code{cor\_MMO3()} of class \code{'error\_struct'}.
+%
+<<eval=FALSE, echo=TRUE>>=
+cor_MMO3(formula = ~1, value = numeric(0), fixed = FALSE, Psi.diag = TRUE)
+@
+%
+As discussed in Section~\ref{sec:model}, this correlation structure
+consists of $q(q-1)/2$ correlation parameters for the cross-sectional structure and $q$ persistence parameters. The argument \code{value} can be used to specify starting values for the parameters $\rho_1, \rho_2, \ldots, \rho_{q(q-1)/2}, \psi_1, \psi_2, \ldots, \psi_q$. If argument \code{fixed} is set to \code{TRUE}, the
+parameters will be set to \code{value} and not estimated. Moreover,
+we also allow for the \code{Psi.diag} to be set to \code{FALSE}, in which case a
+general $\Psi$ matrix which satisfies the stationarity constraints of multivariate
+autoregressive processes is estimated.
+\footnote{This feature is experimental. To ensure that the stationarity constraints
+are satisfied, a decomposition of $\Psi$ which relies on a positive
+definite matrix and an orthogonal matrix as described in \citep{Roy2019} can be employed.
+For the positive definite matrix the unconstrained log matrix parameterization
+can be employed while for the orthogonal matrix Givens parameterization or the Cayley representation can be used.}
+We also provide two additional correlation structures, namely
+\code{cor\_MMO3\_cross()} and  \code{cor\_MMO3\_ar1()}, which allow the users to
+estimate models with only cross-sectional and only longitudinal correlations, respectively.
+
+Moreover, note that the other functionalities of the \pkg{mvord} package can be
+used also for the three dimensional model. Constraints on the threshold parameters and
+on the regression coefficients can be set as described in  Section~3.5 and~3.6 of
+\cite{pub:mvord:Hirk+Hornik+Vana:2020}, by taking into account that the
+dimensionality of the problem is $q \cdot T$ (see structure of correlation
+matrix in Equation~\ref{eq:corstruct}).
+
+
+We use a simulated data set for software illustration purposes,
+given that the data used in Section~\ref{sec:empirical_results} cannot be provided
+due to licensing constraints.  The reader should be aware that
+the data below is not simulated from the proposed model, so there is no relation
+among the covariates and the response and no dependence among the ordinal
+responses.
+%
+<<echo=TRUE>>=
+n   <- 100  # number of firms i.e., subjects
+TT  <- 5   # number of time points
+q   <- 3 # number of ordinal responses
+K_R1   <- 7 # number of classes for rater 1
+K_R2   <- 7 # number of classes for rater 2
+K_Fail <- 2 # number of classes for response Fa
+set.seed(1234)
+credit_data <- data.frame(
+  firm_id = rep(1:n, each = TT),
+  year_id = rep(1:TT, n),
+  R1      = sample(1:K_R1,   n * TT, replace = TRUE),
+  R2      = sample(1:K_R2,   n * TT, replace = TRUE),
+  Fail    = sample(1:K_Fail, n * TT, replace = TRUE),
+  X1 = rnorm(n * TT),
+  X2 = rnorm(n * TT),
+  X3 = rnorm(n * TT),
+  X4 = rnorm(n * TT),
+  X5 = rnorm(n * TT),
+  X6 = rnorm(n * TT),
+  X7 = rnorm(n * TT)
+)
+@
+%
+The data frame \code{credit\_data} has the following structure:
+%
+<<echo=TRUE>>=
+head(credit_data)
+@
+%
+where for the ratings $1$ represents the worst and $7$ represents the best class
+while for the failure indicator a $1$ represents failure and $2$ represents
+no failure.
+
+Note that this data set contains the multiple outcomes in the columns and that
+the covariates vary only over the subject and time dimensions (as they contain
+financial statement information). To bring the data into the format necessary
+for the \code{MMO3} object, we make the following manipulations:
+%
+<<echo=TRUE>>=
+df_MMO3 <- rbind(
+  cbind("response" = credit_data$R1,   "outcome_id" = "R1",   credit_data),
+  cbind("response" = credit_data$R2,   "outcome_id" = "R2",   credit_data),
+  cbind("response" = credit_data$Fail, "outcome_id" = "Fail", credit_data))
+head(df_MMO3)
+@
+%
+To estimate the proposed model with different sets of coefficients and thresholds
+for each outcome using the logit link the following code can be used. In order to improve
+computational speed, we only consider pairs of observations in the composite likelihood
+which are at most one time point apart (by setting \code{PL.lag = 1}). Also,
+we specify constraints on the threshold and regression coefficients such that
+they are equal across time but varying across outcomes.
+%
+<<echo=TRUE, eval=FALSE>>=
+pl.lag <- 1
+res_logit <- mvordflex(
+  MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+  data = df_MMO3,
+  link = mvord::mvlogit(),
+  error.structure = cor_MMO3(~1),
+  coef.constraints = rep(1:q,TT),
+  threshold.constraints = rep(1:q,TT),
+  PL.lag = pl.lag)
+@
+%
+<<echo=FALSE, eval=TRUE>>=
+pl.lag <- 1
+FILE <- "sim_logit_example.rda"
+if (file.exists(FILE)) {
+  load(FILE)
+} else {
+  library("mvordflex")
+  res_logit <- mvordflex(
+    MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+    data = df_MMO3,
+    link = mvord::mvlogit(),
+    error.structure = cor_MMO3(~1),
+    coef.constraints = rep(1:q,TT),
+    threshold.constraints = rep(1:q,TT),
+    PL.lag = pl.lag)
+  save(res_logit, file = FILE)
+}
+@
+%
+The results of the model can be inspected using the \code{summary} function:
+%
+<<echo=TRUE, eval=TRUE>>=
+summary(res_logit)
+@
+We observe that the results are in line to what we would expect:
+the regression coefficients are insignificant as well as all but one
+persistence parameter.
+
+For model comparison, we estimate three further models: one where all correlations
+are set to zero, one with cross-sectional correlations but zero longitudinal
+correlations and one with longitudinal correlations but zero cross-sectional
+correlations.
+
+A model with no correlation among the responses can be estimated using
+the \pkg{mvord} package. For this purpose we create a new column in
+the data frame \code{df\_MMO3} which contains the combined year and outcome ID
+and which will serve as the multiple measurement index.
+<<echo=TRUE, eval=TRUE>>=
+df_MMO3$year_outcome_id <- factor(
+  paste(df_MMO3$year_id, df_MMO3$outcome_id, sep = "+"))
+levels(df_MMO3$year_outcome_id)
+@
+Given that we only want to consider pairs of observations
+which are at most one time point apart (as in the model above),
+we can specify in the \code{control} argument of function \code{mvord()} which
+combinations of responses should enter the pairwise likelihood in the form of
+a list. For the 15 responses in this example, there are in total 105 pairs of
+responses.
+<<echo=TRUE, eval=TRUE>>=
+v <- seq_len(nlevels(df_MMO3$year_outcome_id))
+names(v) <- levels(df_MMO3$year_outcome_id)
+combis_all <- combn(v, 2, simplify = FALSE)
+head(combis_all)
+@
+However, we only consider a subset:
+<<echo=TRUE, eval=TRUE>>=
+id_keep <- sapply(combis_all, function(x) {
+  abs(diff(match(gsub("\\+.*", "", names(x)), unique(df_MMO3$year_id)))) <= pl.lag
+})
+combis <- combis_all[id_keep]
+length(combis)
+@
+We see that from the 105 combinations only \Sexpr{length(combis)} will be used.
+<<echo=TRUE, eval=FALSE>>=
+library("mvord")
+res_ident_logit <- mvord(
+  MMO(response, firm_id, year_outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+  data = df_MMO3,
+  link = mvord::mvlogit(),
+  error.structure = cor_equi(~ 1, value = 0, fixed = TRUE),
+  coef.constraints = rep(1:q, TT),
+  threshold.constraints = rep(1:q, TT),
+  control = mvord:: mvord.control(se = TRUE, combis = combis))
+@
+<<echo=FALSE, eval=TRUE>>=
+FILE <- "sim_ident_logit_example.rda"
+if (file.exists(FILE)) {
+  load(FILE)
+} else {
+  library("mvord")
+  res_ident_logit <- mvord(
+    MMO(response, firm_id, year_outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+    data = df_MMO3,
+    link = mvord::mvlogit(),
+    error.structure = cor_equi(~ 1, value = 0, fixed = TRUE),
+    coef.constraints = rep(1:q, TT),
+    threshold.constraints = rep(1:q, TT),
+    control = mvord:: mvord.control(se = TRUE, combis = combis))
+
+  save(res_ident_logit, file = FILE)
+}
+@
+%
+A model with cross-sectional correlation among the responses can be estimated using
+the \pkg{mvordflex} package:
+<<echo=TRUE, eval=FALSE>>=
+library("mvordflex")
+res_cross_logit <- mvordflex(
+  MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+  data = df_MMO3,
+  link = mvord::mvlogit(),
+  error.structure = cor_MMO3_cross(~1),
+  coef.constraints = rep(1:q, TT),
+  threshold.constraints = rep(1:q, TT),
+  PL.lag = pl.lag)
+@
+<<echo=FALSE, eval=TRUE>>=
+FILE <- "sim_cross_logit_example.rda"
+if (file.exists(FILE)) {
+  load(FILE)
+} else {
+  library("mvordflex")
+  res_cross_logit <- mvordflex(
+    MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+    data = df_MMO3,
+    link = mvord::mvlogit(),
+    error.structure = cor_MMO3_cross(~1),
+    coef.constraints = rep(1:q,TT),
+    threshold.constraints = rep(1:q,TT),
+    PL.lag = pl.lag)
+  save(res_cross_logit, file = FILE)
+}
+@
+Note that this model can also be constructed using the \code{cor\_general()}
+structure in \pkg{mvord} (see code below). However, given that the  \pkg{mvord}
+model would contain different subject units (i.e., firm-years vs. firms), a
+comparison using CLAIC or CLBIC would not be possible. The models would then
+need to be compared based on their prediction ability in- or out-of-sample.
+<<echo=TRUE, eval=FALSE>>=
+library("mvord")
+df_MMO3$firm_year_id <-
+  paste(df_MMO3$firm_id, df_MMO3$year_id, sep = "+")
+res_cross_logit_mvord <- mvord::mvord(
+  MMO(response, firm_year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+  data = df_MMO3,
+  link = mvord::mvlogit(),
+  error.structure =  cor_general())
+@
+Finally, estimating the model with longitudinal but no cross-sectional correlation
+is possible using:
+<<res_ar1_logit, echo=TRUE, eval=FALSE>>=
+library("mvordflex")
+res_ar1_logit <- mvordflex(
+  MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+  data = df_MMO3,
+  link = mvord::mvlogit(),
+  error.structure = cor_MMO3_ar1(~1),
+  coef.constraints = rep(1:q, TT),
+  threshold.constraints = rep(1:q, TT),
+  PL.lag = pl.lag)
+@
+<<echo=FALSE, eval=TRUE>>=
+FILE <- "sim_ar1_logit_example.rda"
+if (file.exists(FILE)) {
+  load(FILE)
+} else {
+  library("mvordflex")
+  res_ar1_logit <- mvordflex(
+    MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2 + X3 + X4 + X5 + X6 + X7,
+    data = df_MMO3,
+    link = mvord::mvlogit(),
+    error.structure = cor_MMO3_ar1(~1),
+    coef.constraints = rep(1:q,TT),
+    threshold.constraints = rep(1:q,TT),
+    PL.lag = pl.lag)
+  save(res_ar1_logit, file = FILE)
+}
+@
+This model can be replicated by three different models constructed using the
+\code{cor\_ar1()} structure in \pkg{mvord}, one for each outcome. Note, again, that
+these models cannot be directly compared in terms of information criteria with the
+model from \pkg{mvordflex}.
+% <<res_ar1_logit_mvord, echo=TRUE, eval=FALSE>>=
+% # This is not straight forward
+% library("mvord")
+% df_MMO3$firm_outcome_id <- factor(
+%   paste(df_MMO3$firm_id, df_MMO3$outcome_id, sep = "+"))
+% res_ar1_logit_mvord <- mvord(
+%   MMO(response, firm_outcome_id, year_id) ~ 0 +
+%     (X1 + X2 + X3 + X4 + X5 + X6 + X7):factor(outcome_id),
+%   data = df_MMO3,
+%   link = mvord::mvlogit(),
+%   error.structure = cor_ar1(~ factor(outcome_id)),
+%   coef.constraints = rep(1,TT),
+%   threshold.constraints = rep(1,TT))
+% @
+
+We can compare all models using the \code{AIC()} function:
+<<echo=TRUE>>=
+AIC(res_ident_logit, res_cross_logit, res_ar1_logit, res_logit)
+BIC(res_ident_logit, res_cross_logit, res_ar1_logit, res_logit)
+@
+As expected from  simulation of the data above,
+the model with an identity correlation matrix performs best in terms of CLAIC and CLBIC.
+
+\section{Conclusion}\label{sec:concl}
+We propose a multivariate ordinal regression model which accounts for
+dependence between  repeated and multiple ordinal measurements.
+This is achieved by imposing a multivariate autoregressive structure on the
+errors underlying the ordinal responses, where the contemporaneous errors
+have a general correlation structure and the coefficients of the AR(1) process
+capture persistence of the ordinal outcomes over time.
+%
+The estimation is performed using composite likelihood methods and a
+simulation study confirms that the model
+parameters can be recovered well (the code for reproducing the
+simulation study is provided in the supplementary materials).
+%
+In the appendix we present the implementation of the model as an \proglang{R}
+\pkg{mvordflex}, which is an extension to the \proglang{R}
+package \pkg{mvord} and exemplify how users can use the functionality provided
+by this extension.
+
+Finally, we illustrate the framework on a data set containing default and credit
+rating information from S\&P and Moody's for US listed companies over the
+period 2003--2013. We find that
+the proposed model improves the fit when compared to simpler specifications which
+take only the cross-sectional correlations or only the time dependence into account.
+
+The model can further be extended in several ways such as assuming a time-varying
+cross-sectional correlation structure $\Sigma_t$. Furthermore, specifying $\Psi$
+as a full matrix, with certain constraints to ensure stationarity and invertibility of the multivariate AR(1) process, can prove relevant in e.g., economic applications.
+% Future work includes further tailoring the estimation procedure to the proposed model.
+% Even if the estimation is feasible in the current setting and can be applied for
+% different error distributions, it would be of interest to
+% look into ways of exploiting the sparsity of the matrix $(\Sigma^*)^{-1}$
+% (see Figure~\ref{fig:Sigmastar}) in order
+% to make the estimation procedure more efficient.
+% More specifically, sparsity in the precision matrix implies conditional independence
+% when the multivariate normal distribution is assumed on the errors, so
+% the components of the composite likelihood can be the conditional distributions
+% for the blocks of dependent variables. It would also be interesting to investigate whether
+% this approach is reasonable also for models with errors following a multivariate
+% Student-$t$ distribution, where the zero entries of the precision matrix do not
+% imply conditional independence but conditional uncorrelatedness \citep{hal-01941643}.
+% This approach which considers based on conditional distributions in the composite likelihood instead of the bivariate probabilities, would, however, lead to a different
+% estimation procedure than the one implemented in the \pkg{mvord} package.
+%
+% For the empirical analysis, it would be interesting to also investigate whether the
+% new correlation structure leads to better out-of-sample results, given that
+% in this work we only look at the in-sample performance of the model.
+% %
+% \begin{figure}[t!]
+% \centering
+% <<fig=TRUE, width=12, height=6>>=
+% toeplitz.block <- function(blocks) {
+%   l <- length(blocks)
+%   m.str <- toeplitz(1:l)
+%   m.str[lower.tri(m.str)] <- 0
+%   res <- lapply(1:l,function(k) {
+%     res <- matrix(0, ncol = ncol(m.str), nrow = nrow(m.str))
+%     res[m.str == k] <- 1
+%     res %x% blocks[[k]]
+%   })
+%   res <- Reduce("+",res)
+%   res[lower.tri(res)] <-  t(res)[lower.tri(res)]
+%   res
+% }
+%
+%
+% J <- 3
+% Sigma <- diag(J)
+% TT <- 10
+% xiU <- c(0.8, 0.85, 0.9)
+% xiL <- c(0.2, 0.25, 0.35)
+%
+% Sigma[upper.tri(Sigma)] <- Sigma[lower.tri(Sigma)] <-
+%     seq(0.95, 0.8, length.out = J * (J - 1) / 2)
+% Psi <- xiU * diag(J)
+% ar_blocks <- lapply(0:(TT - 1), function(t) {
+%   s_ar <- if (t == 0) diag(J) else Psi ^ t
+%     crossprod(s_ar, Sigma)
+% })
+% S <- toeplitz.block(ar_blocks)
+% Sinv <- solve(S)
+% Sinv[abs(Sinv) < 1e-10] <- 0
+% library(corrplot)
+% op <- par(mfrow = c(1,2))
+% corrplot(S, method = "color", tl.pos='n', mar=c(0,0,2,0),
+%          title = expression(Sigma^'*'))
+% corrplot(Sinv, is.corr = FALSE, method = "color", tl.pos='n', mar=c(0,0,2,0),
+%          title = expression((Sigma^'*')^-1))
+% par(op)
+% @
+% \caption{This figure shows matrix $\Sigma^*$ for the fourth simulation scenario
+% ($T = 10$, $\Sigma$ high, $\Psi$ high) together with the inverse of the matrix.
+% It can be seen that the precision matrix $(\Sigma^*)^{-1}$ has a block-diagonal
+% sparse structure.
+% \label{fig:Sigmastar}}
+% \end{figure}
+%
 %
 % <<>>=
 % ## accuracy ratios
@@ -672,123 +1725,151 @@ TODO
 
 
 
+\section*{Acknowledgments}
+This research was supported by funds of the Oesterreichische Nationalbank (Austrian
+Central Bank, Anniversary Fund, project number: 18482 ``Multivariate ordinal regression models for
+enhanced credit risk modeling'').
 
 
 
-\bibliographystyle{plainnat}
-\bibliography{3dim}
+% \section*{Appendix}
 
-\appendix
 
-<<help_print_tab>>=
-## help functions for printing table entries
-p <- function(x) format(x,digits=2,nsmall=2, scientific = FALSE)
-percent_latex <- function(x, digits = 2, format = "f", ...) {
-  per <- NULL
-  perc <- paste0(formatC(100 * x, format = format,
-                         digits = digits, ...), "\\%")
-  per[is.na(x)] <- "\\multicolumn{1}{c}{\\quad -}"
-  per[!is.na(x)] <- sapply(perc[!is.na(x)], function(z){
-    if(grepl("-", z)){
-      paste0("$-$", substring(z, 2))
 
-  } else z})
-  per
-}
-@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-<<parameters_true_t5>>=
-J  <- 3 ## number of responses
-TT <- 5 ## number of year
-I  <- 1000 ## number of firms
-P  <- 2 ## number of covariates
-set.seed(12345)
-id <- 2
-beta.matrix <-
-  round(matrix(rnorm(TT * P, 0, 2), ncol = P, byrow=TRUE), 0)
-
-theta  <- list(c(- 1.0, 0, 1.5),
-               c( -0.5, 0, 0.5),
-               c(- 1.0, 0, 1))
-theta <- theta[1:J]
-Sigma <- diag(J)
-@
-
-<<>>=
-computeTableMeasures <- function(resMat, seMat, param_true) {
-    ME <- rowMeans(resMat)
-    bias <- param_true - ME
-    APB <- abs(((ME - param_true)/param_true))
-    APB[param_true == 0] <- NA
-    sd.sample <- apply(resMat, 1, sd)
-    mean.asy.se <- rowMeans(seMat)
-    median.asy.se <- apply(seMat, 1, median)
-    list(ME = ME, bias = bias, APB = APB,
-         sd.sample = sd.sample,
-         mean.asy.se = mean.asy.se,
-         median.asy.se = median.asy.se)
-}
-@
-
-\section{Simulation 3 dim results}
+% \subsection*{Simulation results}\label{sec:simresults}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-<<parameters_true_t5>>=
-J  <- 3 ## number of responses
-TT <- 5 ## number of year
-I  <- 1000 ## number of firms
-P  <- 2 ## number of covariates
-set.seed(12345)
-id <- 2
-beta.matrix <-
-  round(matrix(rnorm(TT * P, 0, 2), ncol = P, byrow=TRUE), 0)
-
-theta  <- list(c(- 1.0, 0, 1.5),
-               c( -0.5, 0, 0.5),
-               c(- 1.0, 0, 1))
-theta <- theta[1:J]
-Sigma <- diag(J)
-@
-
-
-<<>>=
-computeTableMeasures <- function(resMat, seMat, param_true) {
-    ME <- rowMeans(resMat)
-    bias <- param_true - ME
-    APB <- abs(((ME - param_true)/param_true))
-    APB[param_true == 0] <- NA
-    sd.sample <- apply(resMat, 1, sd)
-    mean.asy.se <- rowMeans(seMat)
-    median.asy.se <- apply(seMat, 1, median)
-    list(ME = ME, bias = bias, APB = APB,
-         sd.sample = sd.sample,
-         mean.asy.se = mean.asy.se,
-         median.asy.se = median.asy.se)
-}
-@
 
 
 
-<<results=tex>>=
-# setwd("~/svn/baR/trunk/Projects/OENB_Credit_Risk/3dim/simulation/simulation_3dim/final")
-library(xtable)
-nrep <- 100
+% \subsection*{Model comparison}
+% For model comparison CLAIC and CLBIC can be used.
+% We are interested mainly in comparing a model with diagonal structure
+% (no correlation between the latent responses), a model with cross-correlations
+% but no serial dependence and a model with serial dependence but not cross correlation.
+%
+% These models can be estimated using the mvord package.
+% However, one needs to pay attention to the fact that the number of pairs
+% being compared in the composite likelihood are different for different models
+% i.e., $qT(qT - 1)/2$ in \code{cor\_MMO3} vs.  $q(q - 1)/2$ in cross-correlation model.
+% However, it would not be computationally efficient to estimate the more parsimonious
+% correlation models for the $qT \times qT$ $\Sigma$ matrix.
+% For this purpose, we correct the CLAIC obtained by mvord to be comparable to the one from
+% mvordflex.
+%
+% $$
+% \int_{L_k}^{U_k}\int_{L_l}^{U_l} f(x, y; r) dxdy = \int_{-\infty}^{U_k}\int_{-\infty}^{U_l} f(x, y; r) dxdy - \int_{-\infty}^{L_k}\int_{-\infty}^{U_l} f(x, y; r) dxdy -\int_{-\infty}^{U_k}\int_{-\infty}^{L_l} f(x, y; r) dxdy +\int_{-\infty}^{L_k}\int_{-\infty}^{L_l} f(x, y; r) dxdy
+% $$
+%
+% For logit link with $\nu = 8$ we can approximate the copula well by the multivariate
+% $t$-distribution. The bivariate probabilities based on the bivariate Student $t$
+% density with $\nu$ degrees of freedom can be computed as:
+% $$
+% \int_{-\infty}^{a}\int_{-\infty}^{b} f(x, y; r) dxdy =
+% \int_{-\infty}^{a}f(x | y = b; r)\left( \int_{-\infty}^{b} f(y) dy\right) dx
+% =
+% \mathcal{T}_{\nu + 1}\left(\frac{a - rb}{\sqrt{\frac{\nu + b^2}{\nu+1}(1-r^2)}}\right) \mathcal{T}_\nu(b)
+% $$
+% using the formula for the conditional density of the multivariate $t$ in
+% https://arxiv.org/pdf/1604.00561.pdf.
+% If we have zero correlation, this becomes:
+% $$
+% \int_{-\infty}^{a}\int_{-\infty}^{b} f(x, y; 0) dxdy =
+% \mathcal{T}_{\nu + 1}\left(\frac{a}{\sqrt{\frac{\nu + b^2}{\nu+1}}}\right) \mathcal{T}_\nu(b)
+% $$
+%
+% For the probit link, the calculations are more straightforward, given that
+% $\int_{-\infty}^{a}\int_{-\infty}^{b} \phi(x, y; 0) dxdy=\Phi(a)\Phi(b) $
 
- for (link in c("probit", "logit")) {
-   for (id in 1:4) {
-     load(file.path("..", "simulation", "final", sprintf("table_link_%s_nrep_100_I_1000_T_5_id_%i.rda", link, id)))
-     title_text <- sprintf("Simulation results based on %i repetitions, $n=1000$, $T = 5$, link %s ($\\Sigma$ %s, $\\Psi$ %s).",
-                           nrep, link,
-                           ifelse(id %in% c(1,2), "high", "low"),
-                           ifelse(id %in% c(1,3), "high", "low"))
-     print(xtable(tab, digits = 4,
-                  caption = title_text),
-           caption.placement = "top",
-           math.style.negative = TRUE,
-           sanitize.text.function = function(x) x)
-   }
- }
-@
 
+
+% \subsection{Matrix form}
+% In order to apply the estimation framework proposed in the \proglang{R} package \pkg{mvord} \citep{pub:mvord:Hirk+Hornik+Vana:2020}, we need to rewrite the proposed model in a matrix form. If we assume that $\bm Y_i$ is a $q \times T$ matrix with
+% \begin{align*}
+% \bm Y_i =  (\bm Y_{i,t_1}, \bm Y_{i,t_2}, \ldots, \bm Y_{i,T}) = \begin{pmatrix}
+% Y_{i,t_1}^1 & Y_{i,t_2}^1 & \cdots &  Y_{i,T}^1\\
+% Y_{i,t_1}^2 & Y_{i,t_2}^2 & \cdots &  Y_{i,T}^2\\
+% \vdots & \vdots & \ddots & \vdots\\
+% Y_{i,t_1}^q & Y_{i,t_2}^q & \cdots &  Y_{i,T}^q\\
+% \end{pmatrix},
+% \end{align*}
+% and let $\bm Y_i^*$ be the vectorization of the matrix $\bm Y_i$.
+% \begin{align*}
+% \bm Y_i^* = \text{vec}(\bm Y_i) =  (Y_{i,t_1}^1, \ldots,  Y_{i,t_1}^{q}, Y_{i,t_2}^1, \ldots, Y_{i,t_2}^{q},  \ldots, Y_{i,t_T}^1, \ldots,  Y_{i,t_T}^{q})^\top
+% \end{align*}
+% For the corresponding vector of latent variables $\bm {\tilde Y}_{i}^*$ we have:
+% For each subject $i$ we have
+% \begin{align}\label{eqn:mvord}
+%   \bm {\tilde Y}_{i}^* =  \bm{X}_{i}^{*} \bm \beta^{*} + \bm \epsilon_{i}^*,
+% \end{align}
+%
+%
+% where $\bm{X}_{i}^{*}$ is a block-diagonal matrix with
+% $$\bm{X}_{i}^{*} = \begin{pmatrix}\bm X_{i,t_1}^* & \bm 0 & \cdots & \bm 0\\
+% \bm 0 & \bm X_{i,t_2}^* & \cdots & \bm 0\\
+% \vdots & \vdots & \ddots & \vdots\\
+% \bm 0 & \bm 0 & \cdots & \bm X_{i,T}^*\\
+% \end{pmatrix}.
+% $$
+%
+% The vector of regression coefficients $\bm \beta^{*}$ is a $p\cdot q \cdot T$-dimensional vector  $\bm \beta^{*} =((\bm{\beta}_{t_1}^*)^\top, (\bm{\beta}_{t_2}^*)^\top, \ldots, (\bm{\beta}_{T}^*)^\top)^\top$
+% % = \begin{pmatrix}
+% % \bm\beta_{t_1}^1 & \bm\beta_{t_2}^1 & \cdots &  \bm\beta_{t_T}^1\\
+% % \bm\beta_{t_1}^2 & \bm\beta_{t_2}^2 & \cdots &  \bm\beta_{t_T}^2\\
+% % \vdots & \vdots & \ddots & \vdots\\
+% % \bm\beta_{t_1}^q & \bm\beta_{t_2}^q & \cdots &  \bm\beta_{t_T}^q\\
+% % \end{pmatrix}$
+%
+% % TODO check $\top$, $q_i$ vs $q$
+%
+% %(optional allow $\bm{\beta}_{t} = (\bm{\beta}_{t}^S, \bm{\beta}_{t}^M, \bm{\beta}_{t}^F, \bm{\beta}_{t}^D)$ with $\tilde{x}_{i,t} = (\bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t}, \bm{x}_{i,t})$
+%
+%
+% and $bm\epsilon_i^*$ is a vector of errors with proposed error structure:
+% \begin{align*}
+% \bm\epsilon_i^* = (\bm \epsilon_{i,1}\top, \bm  \epsilon_{i,2}\top, \ldots, \bm \epsilon_{i,T}\top) \sim MVN_{(q\cdot T)\times (q\cdot T)} \left( \bm 0, \begin{pmatrix}
+% \bm \Sigma  & \bm \Psi \bm \Sigma & \bm \Psi^2 \bm \Sigma & \cdots  & \bm \Psi^{T-1} \bm \Sigma\\
+% (\bm \Psi \bm \Sigma)^\top & \bm \Sigma  & \bm \Psi \bm \Sigma  & \cdots & \bm \Psi^{T-2} \bm \Sigma\\
+% (\bm \Psi^2 \bm \Sigma)^\top & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma & \cdots & \bm \Psi^{T-3} \bm \Sigma\\
+% \vdots & \ddots &  \ddots & \ddots & \vdots\\
+% (\bm \Psi^{T-1} \bm \Sigma)^\top & \cdots & \cdots & (\bm \Psi \bm \Sigma)^\top & \bm \Sigma
+% \end{pmatrix}
+% \right).
+% \end{align*}
+%
+% With a slight modification of the model input, the model of Equation~\ref{eqn:mvord} can be estimated with the framework proposed in \cite{pub:mvord:Hirk+Hornik+Vana:2020}. The modified code is available upon request.
+%
+%
+% \begin{align*}
+% \bm \Psi \bm \Sigma = \begin{pmatrix} \rho_S & 0 & 0 & 0\\
+%   0& \rho_M & 0 & 0\\
+%   0& 0 & \rho_F & 0\\
+%   0& 0& 0& \rho_D
+%   \end{pmatrix}
+%   \begin{pmatrix} 1 & \rho_{S,M} & \rho_{S,F} & \rho_{S,D}\\
+%   \rho_{S,M}& 1 & \rho_{M,F} & \rho_{M,D}\\
+%   \rho_{S,F}& \rho_{M,F} & 1 & \rho_{F,D}\\
+%   \rho_{S,D}&  \rho_{M,D}& \rho_{F,D}& 1
+%   \end{pmatrix} =
+%   \begin{pmatrix} \rho_S & \rho_S \rho_{S,M} & \rho_S \rho_{S,F}& \rho_S \rho_{S,D}\\
+%   \rho_M \rho_{S,M}& \rho_M & \rho_M \rho_{M,F}& \rho_M \rho_{M,D}\\
+%   \rho_F \rho_{S,F}& \rho_F \rho_{M,F}& \rho_F & \rho_F \rho_{F,D}\\
+%   \rho_D \rho_{S,D}& \rho_D \rho_{M,D}& \rho_D \rho_{F,D}& \rho_D
+%   \end{pmatrix}
+% \end{align*}
+%
+%
+% \subsection{cov}
+% \begin{align*}
+%   \COV(\epsilon_{S, t_1}, \epsilon_{M, t_2}) = \COV(\epsilon_{S, t_1}, \rho_M \epsilon_{M, t_1} + u_{M, t_2}) =\\
+%   \COV(\epsilon_{S, t_1}, \rho_M \epsilon_{M, t_1})  + \COV(\epsilon_{S, t_1}, u_{M, t_2}) =\\
+%   \rho_M  \COV(\epsilon_{S, t_1}, \epsilon_{M, t_1}) = \rho_M \rho_{S,M}
+% \end{align*}
+
+%\section*{References}
+%\bibliographystyle{myjmva}
+\bibliographystyle{elsarticle-harv}
+\bibliography{refs}
 
 \end{document}
+

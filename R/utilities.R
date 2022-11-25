@@ -274,6 +274,7 @@ transf_par <- function(par, rho) {
                      seq_len(attr(rho[["error.structure"]], "npar"))]
   sigmas <- rho[["build_error_struct"]](rho[["error.structure"]], par_sigma)
   par_beta <- par[rho[["npar.thetas"]] + seq_len(rho[["npar.betas"]])]
+  print(par_beta)
   betatilde <- rho[["constraints_mat"]] %*% par_beta
   par_theta <- rho[["transf_thresholds"]](par[seq_len(rho[["npar.thetas"]])], rho,
                                           betatilde)
@@ -284,13 +285,13 @@ transf_par <- function(par, rho) {
   pred.upper  <- vapply(seq_len(rho[["ndim"]]), function(j) {
     th_u <- c(thetatilde[[j]], rho[["inf.value"]])[rho[["y"]][, j]]
     xbeta_u <- as.double(rho[["XcatU"]][[j]] %*% betatilde[rho[["indjbeta"]][[j]]])
-    th_u - xbeta_u - rho[["offset"]][[j]]
-  }, FUN.VALUE =  double(rho[["n"]]))/sigmas[["sdVec"]]
+    (th_u - xbeta_u - rho[["offset"]][[j]])/sigmas[["sdVec"]][j]
+  }, FUN.VALUE =  double(rho[["n"]]))
   pred.lower  <- vapply(seq_len(rho[["ndim"]]), function(j) {
     th_l <- c(-rho[["inf.value"]], thetatilde[[j]])[rho[["y"]][, j]]
     xbeta_l <- as.double(rho[["XcatL"]][[j]] %*% betatilde[rho[["indjbeta"]][[j]]])
-    th_l - xbeta_l - rho[["offset"]][[j]]
-  }, FUN.VALUE =  double(rho[["n"]]))/sigmas[["sdVec"]]
+    (th_l - xbeta_l - rho[["offset"]][[j]])/sigmas[["sdVec"]][j]
+  }, FUN.VALUE =  double(rho[["n"]]))
 
   predu <- do.call("rbind",lapply(rho[["combis_fast"]], function(h){
     pred.upper[h[["ind_i"]], h[["combis"]], drop = F]
@@ -323,13 +324,13 @@ transf_par_old <- function(par, rho) {
   pred.upper  <- vapply(seq_len(rho$ndim), function(j) {
     th_u <- c(thetatilde[[j]], rho$inf.value)[rho$y[, j]]
     xbeta_u <- as.double(rho$XcatU[[j]] %*% betatilde[rho$indjbeta[[j]]])
-    th_u - xbeta_u - rho$offset[[j]]
-  }, FUN.VALUE =  double(rho$n))/sigmas$sdVec
+    (th_u - xbeta_u - rho$offset[[j]])/sigmas$sdVec[j]
+  }, FUN.VALUE =  double(rho$n))#/sigmas$sdVec
   pred.lower  <- vapply(seq_len(rho$ndim), function(j) {
     th_l <- c(-rho$inf.value, thetatilde[[j]])[rho$y[, j]]
     xbeta_l <- as.double(rho$XcatL[[j]] %*% betatilde[rho$indjbeta[[j]]])
-    th_l - xbeta_l - rho$offset[[j]]
-  }, FUN.VALUE =  double(rho$n))/sigmas$sdVec
+    (th_l - xbeta_l - rho$offset[[j]])/sigmas$sdVec[j]
+  }, FUN.VALUE =  double(rho$n))
   list(U = pred.upper, L = pred.lower,
        corr_par = sigmas$rVec, sd_mat = sigmas$sdVec)
 }

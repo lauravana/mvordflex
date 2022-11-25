@@ -1,0 +1,32 @@
+---
+title: "Notes mvordflex"
+author: "Laura Vana"
+date: "2022-11-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Rethink $Sigma^*$
+
+$$
+V(\epsilon_t) = \Psi V(\epsilon_{t-1})\Psi + \Sigma
+$$
+If stationary, then it must hold that $V(\epsilon_t) =V(\epsilon_{t-1}) = \Sigma_0$
+So we can find $\Sigma_0$ by 
+$$
+vec(\Sigma_0)=(I-\Psi \otimes \Psi)^{-1}vec(\Sigma)
+$$
+For the covariance we have
+$$
+COV(\epsilon_t, \epsilon_{t-1}) = COV(\Psi\epsilon_{t-1}, \epsilon_{t-1}) = \Psi \Sigma_0
+$$
+
+### Estimation using full $\Psi$
+1. For the estimation of full Psi, the current issue is the fact that the matrix Sigma ^ * will not be a correlation matrix as Psi need not have entries that are less than 1. So the best idea would be to use a covariance structure for Sigma^* and constraints on the thetas?
+
+2. Can any further constraints on Psi be derived?
+
+Var(y_t) = var(eps) =

@@ -1,0 +1,9 @@
+Further notes:
+-------------
+1. Rethink Sigma^*
+
+1. For the estimation of full Psi, the current issue is the fact that the matrix Sigma ^ * will not be a correlation matrix as Psi need not have entries that are less than 1. So the best idea would be to use a covariance structure for Sigma^* and constraints on the thetas?
+
+2. Can any further constraints on Psi be derived?
+
+Var(y_t) = var(eps) =
