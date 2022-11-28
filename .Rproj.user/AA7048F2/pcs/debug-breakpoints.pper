@@ -1,5 +1,51 @@
 {
     "debugBreakpointsState": {
-        "breakpoints": []
+        "breakpoints": [
+            {
+                "id": 0,
+                "path": "~/GitHub/mvordflex/R/utilities.R",
+                "line_number": 13,
+                "function_steps": "2,4,3,2,3,2",
+                "function_name": "set_threshold_type",
+                "state": 1,
+                "editor_state": 1,
+                "editor_line_number": 13,
+                "is_pending_debug_completion": false,
+                "needs_updated_steps": false,
+                "type": 0,
+                "is_package_breakpoint": true,
+                "package_name": "mvordflex"
+            },
+            {
+                "id": 1,
+                "path": "~/baR/trunk/Projects/OENB_Credit_Risk/3dim/simulation/simulation_3dim.R",
+                "line_number": 55,
+                "function_steps": "",
+                "function_name": "simulate_3dim_1rep",
+                "state": 2,
+                "editor_state": 2,
+                "editor_line_number": 55,
+                "is_pending_debug_completion": false,
+                "needs_updated_steps": true,
+                "type": 0,
+                "is_package_breakpoint": false,
+                "package_name": ""
+            },
+            {
+                "id": 2,
+                "path": "~/GitHub/mvordflex/tests/check_toy_mvordflex.R",
+                "line_number": 9,
+                "function_steps": "",
+                "function_name": "toplevel",
+                "state": 1,
+                "editor_state": 1,
+                "editor_line_number": 9,
+                "is_pending_debug_completion": false,
+                "needs_updated_steps": false,
+                "type": 1,
+                "is_package_breakpoint": false,
+                "package_name": ""
+            }
+        ]
     }
 }

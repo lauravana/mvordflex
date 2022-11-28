@@ -29,7 +29,7 @@ PL_se <- function(rho){
       rho$H.inv <- numeric(0)
       rho$V <- numeric(0)
     } else {
-      derivs_for_se <- derivs_ana(rho)
+      derivs_for_se <- derivs_ana_mmo3(rho)
       rho$V <- rho$n/(rho$n - NCOL(derivs_for_se$V)) * derivs_for_se$V  ## correct for degrees of freedom
       rho$H.inv <- tryCatch(chol2inv(chol(derivs_for_se$H)))
     }
@@ -121,28 +121,67 @@ nll_grad_univ <- function(U, L, XU, XL, sd_j, dhdsigma, wts, dfun, pfun) {
   return(l)
 }
 
-## derivative functions dr/dalpha for the correlation part of error structures
-dr_dalpha_general <- function(S, lag = NULL){
-  S
-}
 
-dr_dalpha_equi <- function(alpha, S, lag = NULL){
-  salpha <- c(S %*% alpha)
-  exp(2 * salpha)/(exp(2 * salpha) + 1)^2  * 4 * S
-}
-
-dr_dalpha_ar1 <- function(alpha, S, lag){
-  salpha <- c(S %*% alpha)
-  r <- (exp(2 * salpha) - 1)/(exp(2 * salpha) + 1)
-  const <-  exp(2 * salpha)/(exp(2 * salpha) + 1)^2  * 4
-  lag * r^(lag - 1) * const * S
-}
-## derivative functions dh/dgamma for the variance part of error structures
-dh_dgamma_general <- function(S){
-  S
-}
 
 ## TODO only works for one level!
+## TODO for uncond var
+par_to_Sigmastar <- function(par, k, l, q, TT) {
+  npar_sigma <- q * (q - 1)/2
+  npar_psi <- q
+  tpar_sigma <- par[seq_len(npar_sigma)]
+  tpar_psi   <- par[seq_len(npar_psi) + npar_sigma]
+  ## Sigma
+  sigma <- diag(q)
+  sigma[lower.tri(sigma)] <- sigma[upper.tri(sigma)]<-
+    tpar_sigma
+
+  psi <- diag(tpar_psi)
+
+  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi), c(sigma)),
+                   ncol = q)
+
+  ar_blocks <- lapply(0:(TT - 1), function(tt) {
+    sigma0 %*% (psi ^ tt)
+  })
+
+  S <- toeplitz.block(ar_blocks)
+  S <- cov2cor(S)
+  S[k, l]
+}
+
+par_to_Sigmastar_ar1 <- function(par, k, l, q, TT) {
+  tpar_psi   <- par
+  ## Sigma
+  psi <- diag(tpar_psi)
+  sigma <- diag(nrow = q)
+  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
+                         c(sigma)),
+                   ncol = q)
+
+  ar_blocks <- lapply(0:(TT - 1), function(tt) {
+    s_ar <- if (tt == 0) diag(q) else psi ^ tt
+    sigma0 %*% s_ar
+  })
+
+  S <- toeplitz.block(ar_blocks)
+  S <- cov2cor(S)
+  S[k, l]
+}
+
+par_to_Sigmastar_cross <- function(par, k, l, q, TT) {
+  tpar_sigma <- par
+  sigma <- diag(q)
+  sigma[lower.tri(sigma)] <- sigma[upper.tri(sigma)]<-
+    tpar_sigma
+
+  ar_blocks <- lapply(0:(TT - 1), function(tt) {
+    if (tt == 0) sigma else matrix(0, q, q)
+  })
+
+  S <- toeplitz.block(ar_blocks)
+  S <- cov2cor(S)
+  S[k, l]
+}
 dr_dalpha_MMO3 <- function(si, xi, indkl, k, l, ndim_j, ndim_t) {
   r1 <- (k - 1)  %% ndim_j + 1 ## which rater 1
   r2 <- (l - 1)  %% ndim_j + 1 ## which rater 2
@@ -276,7 +315,7 @@ set_offset_threshold_l <- function(rho) {
     rho$XL[[j]][, seq_along(x), drop = F] %*% x  + ol - rho$offset[[j]]
   })
 }
-derivs_ana <- function(rho){
+derivs_ana_mmo3 <- function(rho){
   ############################################
   ## function for analytic gradient and hessian
   #############################################
@@ -329,25 +368,27 @@ derivs_ana <- function(rho){
   ## Setting up the error structure
   npar.err <-  attr(rho$error.structure, "npar")
   #npar.err.start <-  attr(rho$error.structure, "npar_start")
-  npar.cor <-  attr(rho$error.structure, "npar.cor")
-  npar.sd  <-  attr(rho$error.structure, "npar.sd")
-
   par_sigma <-  par[rho$npar.thetas + rho$npar.betas + seq_len(npar.err)]
 
-  alpha <- par_sigma[seq_len(npar.cor)]
-  gamma <- par_sigma[-seq_len(npar.cor)]
+
+
+
+  # alpha <- par_sigma[seq_len(npar.cor)]
+  # gamma <- par_sigma[-seq_len(npar.cor)]
   S <- attr(rho$error.structure, "covariate")
   if (grepl("cor_MMO3", rho$error.structure$name)) {
+    npar.cor <-  attr(rho$error.structure, "npar")
+    npar.sd  <-  0
     ndim_j <- attr(rho$error.structure, "ndim_j")
-    npar1  <- attr(rho$error.structure, "npar_sigma")
+    npar_sigma  <- attr(rho$error.structure, "npar_sigma")
     npar_psi  <- attr(rho$error.structure, "npar_psi")
     ndim_t <- attr(rho$error.structure, "ndim_t")
     nlev <- NCOL(S)
     if (nlev > 1) stop("Standard errors are not implemented for cor_MMO3 with more than one level.")
-    tpar_si   <- par_sigma[seq_len(npar1)]
-    tpar_psi  <- par_sigma[npar1 + seq_len(npar_psi)]
+    tpar_si   <- par_sigma[seq_len(npar_sigma)]
+    tpar_psi  <- par_sigma[npar_sigma + seq_len(npar_psi)]
     Sigma <- lapply(seq_len(nlev), function(l) {
-      nu <- tpar_si[(l - 1) * npar1 + seq_len(npar1)]
+      nu <- tpar_si[(l - 1) * npar_sigma + seq_len(npar_sigma)]
       angles <- pi * exp(nu)/(1 + exp(nu))
       cosmat <- diag(ndim_j)
       cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
@@ -369,12 +410,12 @@ derivs_ana <- function(rho){
 
   ## upper linear predictor
   rho$U <- sapply(seq_len(rho$ndim), function(j) {
-    rho$XU[[j]] %*% psi[rho$indjbeta2[[j]]] + rho$offsetu[[j]]
-  })/sigmas$sdVec
+    (rho$XU[[j]] %*% psi[rho$indjbeta2[[j]]] + rho$offsetu[[j]])/sigmas$sdVec[j]
+  })
   ## lower linear predictor
   rho$L <- sapply(seq_len(rho$ndim), function(j) {
-    rho$XL[[j]] %*% psi[rho$indjbeta2[[j]]] + rho$offsetl[[j]]
-  })/sigmas$sdVec
+    (rho$XL[[j]] %*% psi[rho$indjbeta2[[j]]] + rho$offsetl[[j]])/sigmas$sdVec[j]
+  })
 
   ########################################################
   rho$std.dev.mat <- sigmas$sdVec ## matrix of standard deviations
@@ -405,11 +446,6 @@ derivs_ana <- function(rho){
       ## fill into an (n x length(par)) gradient matrix
       gr_mat <- matrix(0, nrow = rho$n, length(par))
       gr_mat[subj, seq_len(rho$npar.thetas + rho$npar.betas)] <- as.matrix(gr$dpsi)
-      if (npar.sd > 0) {
-        colpos_sd <- rho$npar.thetas + rho$npar.betas + npar.cor +
-          (seq_len(NCOL(Sj)) - 1) * rho$ndim + j
-        gr_mat[subj, colpos_sd]  <- gr$dsd
-      }
       gr_mat
     })
   }
@@ -430,8 +466,8 @@ derivs_ana <- function(rho){
     Ul <- rho$U[indkl, l] ## upper predictor l-th response
     Lk <- rho$L[indkl, k] ## lower predictor k-th response
     Ll <- rho$L[indkl, l] ## lower predictor l-th response
-    sd_k <- rho$std.dev.mat[indkl, k] ## standard deviation of k-th response
-    sd_l <- rho$std.dev.mat[indkl, l] ## standard deviation of l-th response
+    sd_k <- rho$std.dev.mat[k] ## standard deviation of k-th response
+    sd_l <- rho$std.dev.mat[l] ## standard deviation of l-th response
     Skl <- S[indkl, , drop = F]
     ## correlation
     rkl <- rho$r <- r_mat[indkl, (it - it0)]
@@ -443,7 +479,7 @@ derivs_ana <- function(rho){
       r = rkl)
     pr[pr < .Machine$double.eps] <- .Machine$double.eps
     ## vector h_kl will contain the gradient for all d -log p_{kl}/d pars
-    dpsi <- dcorr <- dstddev <- NULL
+    dpsi <- dcorr <- NULL
     ##################
     ## dpsi
     ##################
@@ -458,43 +494,27 @@ derivs_ana <- function(rho){
     ##################
     if (npar.cor > 0){
       dcorr <- matrix(0, ncol = npar.cor, nrow = rho$n)
-      dLdr <- d_corr_rect(Uk, Ul, Lk, Ll, r = rkl,
-                          fun = rho$link$deriv.fun$dF2dr)
+      dLdr  <- d_corr_rect(Uk, Ul, Lk, Ll, r = rkl,
+                           fun = rho$link$deriv.fun$dF2dr)
+      # drdalpha <- switch(rho$error.structure$name,
+      #                    cor_MMO3    = dr_dalpha_MMO3(si, xi, indkl, k, l, ndim_j, ndim_t),
+      #                    cor_MMO3_ar1= dr_dalpha_MMO3_ar1(xi, indkl, k, l, ndim_j, ndim_t),
+      #                    cor_MMO3_cross = dr_dalpha_MMO3_cross(si,indkl, k, l, ndim_j, ndim_t))
+      paropt <- switch(rho$error.structure$name,
+                       cor_MMO3       = c(si[lower.tri(si)], xi),
+                       cor_MMO3_ar1   = xi,
+                       cor_MMO3_cross = si[lower.tri(si)])
+
       drdalpha <- switch(rho$error.structure$name,
-                         cor_general = dr_dalpha_general(Skl),
-                         cov_general = dr_dalpha_general(Skl),
-                         cor_equi    = dr_dalpha_equi(alpha, Skl),
-                         cor_ar1     = dr_dalpha_ar1(alpha, Skl, lag = l - k),
-                         cor_MMO3    = dr_dalpha_MMO3(si, xi, indkl, k, l, ndim_j, ndim_t),
-                         cor_MMO3_ar1= dr_dalpha_MMO3_ar1(xi, indkl, k, l, ndim_j, ndim_t),
-                         cor_MMO3_cross = dr_dalpha_MMO3_cross(si,indkl, k, l, ndim_j, ndim_t))
-      #print((drdalpha))
-      colpos <- switch(rho$error.structure$name,
-                       cor_general = (seq_len(NCOL(Skl)) - 1) * rho$ndim * (rho$ndim - 1)/2 + (it - it0),
-                       cov_general = (seq_len(NCOL(Skl)) - 1) * rho$ndim * (rho$ndim - 1)/2 + (it - it0),
-                       cor_equi    = seq_len(npar.cor),
-                       cor_ar1     = seq_len(npar.cor),
-                       cor_MMO3    = seq_len(npar.cor),
-                       cor_MMO3_ar1 = seq_len(npar.cor),
-                       cor_MMO3_cross = seq_len(npar.cor))
-      dcorr[indkl, colpos] <- dLdr * drdalpha
+        cor_MMO3       = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
+        cor_MMO3_ar1   = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_ar1(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
+        cor_MMO3_cross = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_cross(x, k, l, q = ndim_j, TT = ndim_t), paropt)))
+
+      dcorr[indkl, ] <- tcrossprod(dLdr, drdalpha)
     }
     ##################
     ## dstddev
-    ##################
-    if (npar.sd > 0){
-      dstddev <- matrix(0, nrow = rho$n, ncol = npar.sd)
-      poslevk <- (seq_len(NCOL(Skl)) - 1) * rho$ndim + k
-      poslevl <- (seq_len(NCOL(Skl)) - 1) * rho$ndim + l
-      dhdsigma <- dh_dgamma_general(Skl)
-      dstddev[indkl, poslevk] <-
-        d_sd_rect(Uk, Ul, Lk, Ll, sd_k, rkl,
-                  d_biv_fun = rho$link$deriv.fun$dF2dx) * dhdsigma
-      dstddev[indkl, poslevl] <-
-        d_sd_rect(Ul, Uk, Ll, Lk, sd_l, rkl,
-                  d_biv_fun = rho$link$deriv.fun$dF2dx) * dhdsigma
-    }
-    g_list[[it]] <- rho$weights * 1/pr * cbind(dpsi, dcorr, dstddev)
+    g_list[[it]] <- rho$weights * 1/pr * cbind(dpsi, dcorr)
   }
   ## matrix containing the gradients for each subject
   Vi <- Reduce("+", g_list)

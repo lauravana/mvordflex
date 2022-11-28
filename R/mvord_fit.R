@@ -69,7 +69,8 @@ mvordflex.fit <- function(rho){
   # starting values
   ###############################
   if (is.null(rho$start.values)) {
-    rho$start <- c(get_start_values(rho), start_values(rho$error.structure, rho$y))
+    rho$start <- c(get_start_values(rho),
+                   start_values(rho$error.structure, rho$y))
   } else {
   #   # if(length(unlist(rho$start.values[c("theta", "beta")])) !=  (rho$npar.thetas + rho$npar.betas)){
   #   #   cat(paste0("length should be ", rho$npar.thetas + rho$npar.betas))
@@ -128,7 +129,7 @@ mvordflex.fit <- function(rho){
       mu <- double(rho$p)
       sc <- rep.int(1, rho$p)
       ind_int <- attr(x_new[[j]], "assign") != 0
-      tmp <- scale_mvord(x_new[[j]][, ind_int, drop = FALSE])
+      tmp <- mvord:::scale_mvord(x_new[[j]][, ind_int, drop = FALSE])
       x_new[[j]][, ind_int] <- tmp$x
       mu[ind_int] <- tmp$mu
       sc[ind_int] <- tmp$sc

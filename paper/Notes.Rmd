@@ -1,0 +1,68 @@
+---
+title: "Notes mvordflex"
+author: "Laura Vana"
+date: "2022-11-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Case with diagonal $\Psi$
+
+## $\Sigma^*$ in the case with diagonal $\Psi$
+
+$$
+V(\epsilon_t) = \Psi V(\epsilon_{t-1})\Psi^\top + \Sigma
+$$
+If stationary, then it must hold that $V(\epsilon_t) =V(\epsilon_{t-1}) = \Sigma_0$
+So we can find $\Sigma_0$ by 
+$$
+vec(\Sigma_0)=(I-\Psi \otimes \Psi)^{-1}vec(\Sigma)
+$$
+For the covariance we have (these will go to the lower triangle of the large variance-covariance matrix):
+$$
+COV(\epsilon_t, \epsilon_{t-1}) = COV(\Psi\epsilon_{t-1} + u_t, \epsilon_{t-1}) = \Psi \Sigma_0
+$$
+and  (these will go to the upper triangle of the large variance-covariance matrix)
+$$
+COV(\epsilon_{t-1}, \epsilon_{t}) = COV(\epsilon_{t-1}, \Psi\epsilon_{t-1}+ u_{t}) = \Sigma_0\Psi^\top
+$$
+
+## SEs for the error structure parameters
+
+In the diagonal case with $q = 3$
+we have: $\rho_1$, $\rho_2$, $\rho_3$ and 
+$\xi_1$,$\xi_2$,$\xi_3$.
+
+Consider each pair of dimensions $(k, l)$ with $k < l$ and $k, l \in \{1, 2,\cdots,qT\}$ the corresponding portion of $\Sigma^*$ is given by: 
+$$
+S^{(k,l)} = \begin{matrix}
+ s_1 & s_2\\
+ s_2 & s_3\\
+ \end{matrix}
+$$
+where $k_t$ is the time index corresponding to the $k$-th response and  $k_j$ the outcome index corresponding to the $k$-th response.
+
+For $q=3$ we have the following form for $\Sigma_0$
+$$
+\Sigma_0= \begin{pmatrix}
+ \frac{1}{1-\xi_1^2} & &\\
+ \frac{\rho_1}{1-\xi_1\xi_2}&  \frac{1}{1-\xi_2^2} & \\
+ \frac{\rho_2}{1-\xi_1\xi_3}&\frac{\rho_3}{1-\xi_2\xi_3}& \frac{1}{1-\xi_3^2}
+ \end{pmatrix}
+$$
+
+
+We need to compute the partial derivatives
+$$
+\frac{\partial S_{k,l}}{\partial \rho_{1}}, \frac{\partial S_{k,l}}{\partial \rho_{2}}, \frac{\partial S_{k,l}}{\partial \rho_{3}}, 
+\frac{\partial S_{k,l}}{\partial \xi_{1}}, \frac{\partial S_{k,l}}{\partial \xi_{2}}, \frac{\partial S_{k,l}}{\partial \xi_{3}}
+$$
+
+# Estimation using full $\Psi$
+1. For the estimation of full Psi, the current issue is the fact that the matrix Sigma ^ * will not be a correlation matrix as Psi need not have entries that are less than 1. So the best idea would be to use a covariance structure for Sigma^* and constraints on the thetas?
+
+2. Can any further constraints on Psi be derived?
+
