@@ -153,7 +153,6 @@ par_to_Sigmastar_ar1 <- function(par, k, l, q, TT) {
   tpar_psi   <- par
   ## Sigma
   psi <- diag(tpar_psi)
-  print(psi)
   sigma <- diag(nrow = q)
   sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
                          c(sigma)),
@@ -510,7 +509,7 @@ derivs_ana_mmo3 <- function(rho){
         cor_MMO3       = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
         cor_MMO3_ar1   = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_ar1(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
         cor_MMO3_cross = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_cross(x, k, l, q = ndim_j, TT = ndim_t), paropt)))
-      print(drdalpha)
+
       dcorr[indkl, ] <- tcrossprod(dLdr, drdalpha)
     }
     ##################
