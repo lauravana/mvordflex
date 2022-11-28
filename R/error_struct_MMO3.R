@@ -690,8 +690,8 @@ make_stationary_psi <- function(tpar) {
   # }
   #Q <- PL.Q(Im, S)
   #Q <-  diag(c(1, 1,-1)) %*% (Im - S) %*% solve(Im + S)
-  #Q <- solve(Im - S, Im + S)
-  Q <- Im#(Im - S) %*% solve(Im+S)
+  Q <- solve(Im - S, Im + S)
+  #Q <- Im#(Im - S) %*% solve(Im+S)
   ### make matrix A = V^{1/2}Q(V + M)^{-1/2}, M-fixed
   Vhalf <- U %*% diag(exp(loglambda/2)) %*% t(U) #
   psi   <- Vhalf %*% Q %*% sqrootmat(chol2inv(chol(V + Im)))

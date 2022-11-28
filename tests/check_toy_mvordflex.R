@@ -74,6 +74,7 @@ res <- mvordflex(
   threshold.constraints = rep(1:q, TT),
   #PL.lag = 1,
   control = mvord::mvord.control(se = TRUE,
+                                 solver = "nlminb",
                                  solver.optimx.control = list(maxit = 5000,
                                                               trace = TRUE))
 )
