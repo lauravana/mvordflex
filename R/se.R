@@ -149,6 +149,33 @@ par_to_Sigmastar <- function(par, k, l, q, TT) {
   S[k, l]
 }
 
+par_to_Sigmastar_Psifull <- function(par, k, l, q, TT) {
+  npar_sigma <- q * (q - 1)/2
+  npar_psi   <- q ^ 2
+  tpar_sigma <- par[seq_len(npar_sigma)]
+  tpar_psi   <- par[seq_len(npar_psi) + npar_sigma]
+  ## Sigma
+  sigma <- diag(q)
+  sigma[lower.tri(sigma)] <- sigma[upper.tri(sigma)]<-
+    tpar_sigma
+
+  ## Psi
+  psi <- make_stationary_psi(tpar_psi)
+
+  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
+                         c(sigma)),
+                   ncol = q)
+
+  ar_blocks <- vector("list", TT)
+  for (tt in 0:(TT - 1)) {
+    s_ar <- if (tt == 0) diag(q) else s_ar %*% psi
+    ar_blocks[[tt + 1]] <- tcrossprod(sigma0, s_ar)
+  }
+  S <- toeplitz.block(ar_blocks)
+  S <- cov2cor(S)
+  S[k, l]
+}
+
 par_to_Sigmastar_ar1 <- function(par, k, l, q, TT) {
   tpar_psi   <- par
   ## Sigma
@@ -162,6 +189,25 @@ par_to_Sigmastar_ar1 <- function(par, k, l, q, TT) {
     s_ar <- if (tt == 0) diag(q) else psi ^ tt
     sigma0 %*% s_ar
   })
+
+  S <- toeplitz.block(ar_blocks)
+  S <- cov2cor(S)
+  S[k, l]
+}
+par_to_Sigmastar_ar1_Psifull <- function(par, k, l, q, TT) {
+  tpar_psi   <- par
+  ## Sigma
+  psi <- make_stationary_psi(tpar_psi)
+  sigma <- diag(nrow = q)
+  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
+                         c(sigma)),
+                   ncol = q)
+
+  ar_blocks <- vector("list", TT)
+  for (tt in 0:(TT - 1)) {
+    s_ar <- if (tt == 0) diag(q) else s_ar %*% psi
+    ar_blocks[[tt + 1]] <- tcrossprod(sigma0, s_ar)
+  }
 
   S <- toeplitz.block(ar_blocks)
   S <- cov2cor(S)
@@ -504,12 +550,18 @@ derivs_ana_mmo3 <- function(rho){
                        cor_MMO3       = c(si[lower.tri(si)], xi),
                        cor_MMO3_ar1   = xi,
                        cor_MMO3_cross = si[lower.tri(si)])
-
+      if (rho$error.structure$Psi.diag) {
       drdalpha <- switch(rho$error.structure$name,
         cor_MMO3       = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
         cor_MMO3_ar1   = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_ar1(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
         cor_MMO3_cross = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_cross(x, k, l, q = ndim_j, TT = ndim_t), paropt)))
+      } else {
+        drdalpha <- switch(rho$error.structure$name,
+                           cor_MMO3       = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_Psifull(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
+                           cor_MMO3_ar1   = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_ar1_Psifull(x, k, l, q = ndim_j, TT = ndim_t), paropt)),
+                           cor_MMO3_cross = drop(numDeriv::jacobian(func = function(x) par_to_Sigmastar_cross(x, k, l, q = ndim_j, TT = ndim_t), paropt)))
 
+      }
       dcorr[indkl, ] <- tcrossprod(dLdr, drdalpha)
     }
     ##################
