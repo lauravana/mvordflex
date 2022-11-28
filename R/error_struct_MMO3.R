@@ -211,20 +211,17 @@ make_Q_cor_MMO3 <- function(tpar, eobj){
   npar1_psi <- attr(eobj, "npar_psi")
   tpar_sigma <- tpar[seq_len(npar_sigma)]
   tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
-  sigma <- lapply(seq_len(nlev), function(l) {
-    nu <- tpar_sigma[(l - 1) * npar1 + seq_len(npar1)]
-    angles <- pi * exp(nu)/(1 + exp(nu))
-    cosmat <- diag(ndim_j)
-    cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
-    S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
-    S1[, 1L] <- 1
-    S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
-    #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
-    tLmat <- sapply(seq_len(ndim_j),
-                    function(j) cosmat[j, ] * cumprod(S1[j, ]))
-    sigma <- crossprod(tLmat)
-    sigma
-  })
+
+  angles <- pi * exp(tpar_sigma)/(1 + exp(tpar_sigma))
+  cosmat <- diag(ndim_j)
+  cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
+  S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
+  S1[, 1L] <- 1
+  S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
+  #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
+  tLmat <- sapply(seq_len(ndim_j),
+                  function(j) cosmat[j, ] * cumprod(S1[j, ]))
+  sigma <- crossprod(tLmat)
 
   if (npar_psi == 0) {
     psi <-diag(z2r(rep(0, ndim_j)))
@@ -238,7 +235,7 @@ make_Q_cor_MMO3 <- function(tpar, eobj){
 
 
   sigma0 <- matrix(solve(diag(ndim_j^2) - kronecker(psi, psi),
-                 c(sigma[[1]])),
+                 c(sigma)),
            ncol = ndim_j)
 
   ar_blocks <- vector("list", length = ndim_t)
@@ -640,14 +637,25 @@ make_stationary_psi <- function(tpar) {
   s <- tpar[m * (m - 1)/2 + m + seq_len(m * (m - 1)/2)] ## Q orthogonal
   ## Transformations
   ### For V - positive definite: LDL'
-  logV <- matrix(0, nrow = m, ncol = m)
-  logV[upper.tri(logV)] <- l
-  logV <- logV + t(logV)
-  diag(logV) <- d
-  e <- eigen(logV)
-  U <- e$vectors
-  loglambda <- e$values
-  V <- U %*% tcrossprod(diag(exp(loglambda)), U)
+  angles <- pi * exp(l)/(1 + exp(l))
+  cosmat <- diag(m)
+  cosmat[lower.tri(cosmat)] <- cos(angles)
+  S1 <- matrix(0, nrow = m, ncol = m)
+  S1[, 1L] <- 1
+  S1[lower.tri(S1, diag = T)][-(1:m)] <- sin(angles)
+  #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
+  tLmat <- sapply(seq_len(m),
+                  function(j) cosmat[j, ] * cumprod(S1[j, ]))
+
+  V <- crossprod(tLmat) * tcrossprod(d)
+  # logV <- matrix(0, nrow = m, ncol = m)
+  # logV[upper.tri(logV)] <- l
+  # logV <- logV + t(logV)
+  # diag(logV) <- d
+  # e <- eigen(logV)
+  # U <- e$vectors
+  # loglambda <- e$values
+  # V <- U %*% tcrossprod(diag(exp(loglambda)), U)
   ### For Q - orthogonal - for now not working
   S <- matrix(0, nrow = m, ncol = m) # skew symmetric S' = -S
   #S <- diag(m)
@@ -693,7 +701,7 @@ make_stationary_psi <- function(tpar) {
   Q <- solve(Im - S, Im + S)
   #Q <- Im#(Im - S) %*% solve(Im+S)
   ### make matrix A = V^{1/2}Q(V + M)^{-1/2}, M-fixed
-  Vhalf <- U %*% diag(exp(loglambda/2)) %*% t(U) #
-  psi   <- Vhalf %*% Q %*% sqrootmat(chol2inv(chol(V + Im)))
+  #Vhalf <- U %*% diag(exp(loglambda/2)) %*% t(U) #
+  psi   <- sqrootmat(V) %*% Q %*% sqrootmat(chol2inv(chol(V + Im)))
   psi
 }

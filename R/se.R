@@ -160,10 +160,9 @@ par_to_Sigmastar_Psifull <- function(par, k, l, q, TT) {
     tpar_sigma
 
   ## Psi
-  psi <- make_stationary_psi(tpar_psi)
+  psi <- matrix(tpar_psi, nrow = q)
 
-  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
-                         c(sigma)),
+  sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi), c(sigma)),
                    ncol = q)
 
   ar_blocks <- vector("list", TT)
@@ -197,7 +196,8 @@ par_to_Sigmastar_ar1 <- function(par, k, l, q, TT) {
 par_to_Sigmastar_ar1_Psifull <- function(par, k, l, q, TT) {
   tpar_psi   <- par
   ## Sigma
-  psi <- make_stationary_psi(tpar_psi)
+  psi <- matrix(tpar_psi, nrow = q)
+
   sigma <- diag(nrow = q)
   sigma0 <- matrix(solve(diag(q^2) - kronecker(psi, psi),
                          c(sigma)),
@@ -447,7 +447,7 @@ derivs_ana_mmo3 <- function(rho){
       sigma
     })
     si <- Sigma[[1]] #unlist(lapply(Sigma, function(s) s[lower.tri(s)]))
-    xi <- z2r(tpar_psi)
+    xi <- if (rho$error.structure$Psi.diag) z2r(tpar_psi) else c(make_stationary_psi(tpar_psi))
   }
   sigmas <- rho$build_error_struct(rho$error.structure, par_sigma)
   ###############################################
