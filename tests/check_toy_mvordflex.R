@@ -69,7 +69,7 @@ AIC(res_ar1, res_cross, res)
 res <- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex2,
-  error.structure = cor_MMO3(~1, Psi.diag = FALSE),
+  error.structure = cor_MMO3_ar1(~1, Psi.diag = FALSE),
   coef.constraints = rep(1, q * TT),
   threshold.constraints = rep(1:q, TT),
   #PL.lag = 1,
@@ -81,3 +81,4 @@ res <- mvordflex(
 
 summary(res)
 res$rho$optRes
+
