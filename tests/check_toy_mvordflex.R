@@ -66,18 +66,18 @@ res_cross <- mvordflex(
 AIC(res_ar1, res_cross, res)
 
 ## Probit
+data("data_toy_mvordflex2", package = "mvordflex")
 res <- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex2,
-  error.structure = cor_MMO3(~1, Psi.diag = FALSE),
-  #coef.constraints = rep(1, q * TT),
-  #threshold.constraints = rep(1:q, TT),
-  PL.lag = 1,
-  control = mvord::mvord.control(se = FALSE))
-,
+  error.structure = cor_MMO3(~1),
+  coef.constraints = rep(1, q * TT),
+  threshold.constraints = rep(1:q, TT),
+  PL.lag = 3,
+  control = mvord::mvord.control(se = TRUE,
                                  solver = "newuoa",
-                                 solver.optimx.control = list(maxit = 5000,
-                                                              eval.max= 1000,
+                                 solver.optimx.control = list(maxit = 25000,
+                                                              #eval.max= 1000,
                                                               trace = 1)))
 
 summary(res)

@@ -215,80 +215,66 @@ make_Q_cor_MMO3 <- function(tpar, eobj){
   npar1_psi <- attr(eobj, "npar_psi")
   tpar_sigma <- tpar[seq_len(npar_sigma)]
   tpar_psi <- tpar[seq_len(npar_psi)+ npar_sigma]
-  sigma <- lapply(seq_len(nlev), function(l) {
-    nu <- tpar_sigma[(l - 1) * npar1 + seq_len(npar1)]
-    angles <- pi * exp(nu)/(1 + exp(nu))
-    cosmat <- diag(ndim_j)
-    cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
-    S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
-    S1[, 1L] <- 1
-    S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
-    #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
-    tLmat <- sapply(seq_len(ndim_j),
+
+  nu <- tpar_sigma
+  angles <- pi * exp(nu)/(1 + exp(nu))
+  cosmat <- diag(ndim_j)
+  cosmat[lower.tri(cosmat)] <- if(length(angles)>0) cos(angles) else 0
+  S1 <- matrix(0, nrow = ndim_j, ncol = ndim_j)
+  S1[, 1L] <- 1
+  S1[lower.tri(S1, diag = T)][-(1:ndim_j)] <- if(length(angles)>0) sin(angles) else 1
+  #S1[-1L, -1L][lower.tri(S1[-1L, -1L], diag = T)] <- sin(angles)
+  tLmat <- sapply(seq_len(ndim_j),
                     function(j) cosmat[j, ] * cumprod(S1[j, ]))
-    sigma <- crossprod(tLmat)
-    sigma
+  sigma <- crossprod(tLmat)
+
+  tpar_psi1 <- if(npar1_psi == 0) rep(0, ndim_j) else tpar_psi
+  psi <- diag(z2r(tpar_psi1))
+
+  # sigma0 <-
+  #  matrix(solve(diag(ndim_j^2) - kronecker(psi, psi),
+  #               c(sigma)),
+  #         ncol = ndim_j)
+  sigma0_vec <- 1/(1 - diag(kronecker(psi, psi))) * c(sigma)
+  sigma0 <- matrix(sigma0_vec, ncol = ndim_j)
+
+  ar_blocks <- lapply(0:(ndim_t - 1), function(t) {
+    s_ar <- if (t == 0) diag(ndim_j) else psi ^ t
+    tcrossprod(sigma0, s_ar)
   })
 
-  psi <- lapply(seq_len(nlev), function(l) {
-    tpar_psi1 <- if(npar1_psi == 0) rep(0, ndim_j) else tpar_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]
-    diag(z2r(tpar_psi1))
-  })
-  sigma0 <- lapply(seq_len(nlev), function(l) {
-    matrix(solve(diag(ndim_j^2) - kronecker(psi[[l]], psi[[l]]),
-                 c(sigma[[l]])),
-           ncol = ndim_j)
-  })
-
-  ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
-    s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    sigma0[[l]] %*% s_ar
-  })})
-  S <- lapply(seq_len(nlev), function(l)
-    (toeplitz.block(ar_blocks[[l]])))
+  S <- list(toeplitz.block(ar_blocks))
   S
 }
 
 error_structure.cor_MMO3 <- function(eobj, type, ...){
   par <- attr(eobj, "par")
-  npar <- attr(eobj, "npar")# npar <- length(par)
-  ndim <- attr(eobj, "ndim")
+  npar <- attr(eobj, "npar")
   ndim_t <- attr(eobj, "ndim_t")
   ndim_j <- attr(eobj, "ndim_j")
-  covar <- attr(eobj, "covariate")
-  ynames <- attr(eobj, "ynames")
-  nlev <- NCOL(covar)
-  npar.cor <- npar/nlev
   npar_sigma <- attr(eobj, "npar_sigma")
   npar_psi <- attr(eobj, "npar_psi")
 
-  npar1 <- attr(eobj, "npar_sigma")/nlev
-  npar1_psi <- attr(eobj, "npar_psi")/nlev
   par_sigma <- par[seq_len(npar_sigma)]
-  par_psi <- par[seq_len(npar_psi)+ npar_sigma]
+  par_psi  <- par[seq_len(npar_psi) + npar_sigma]
 
-  sigma <- lapply(seq_len(nlev), function(l) {
-    S1 <- diag(ndim_j)
-    S1[lower.tri(S1)] <- par_sigma[(l - 1) * npar1 + seq_len(npar1)]
-    S1[upper.tri(S1)] <- t(S1)[upper.tri(S1)]
-    S1
-  })
+  sigma <- diag(ndim_j)
+  sigma[lower.tri(sigma)] <- par_sigma
+  sigma[upper.tri(sigma)] <- t(sigma)[upper.tri(sigma)]
 
-  psi <- lapply(seq_len(nlev), function(l) {diag(z2r(par_psi[(l - 1) * npar1_psi + seq_len(npar1_psi)]))})
+  psi <- diag(z2r(par_psi))
 
-  sigma0 <- lapply(seq_len(nlev), function(l) {
-    matrix(solve(diag(ndim_j^2) - kronecker(psi[[l]], psi[[l]]),
-                 c(sigma[[l]])),
+  sigma0 <-
+    matrix(solve(diag(ndim_j^2) - kronecker(psi, psi),
+                 c(sigma)),
            ncol = ndim_j)
-  })
 
-  ar_blocks <- lapply(seq_len(nlev), function(l) {lapply(0:(ndim_t - 1), function(t) {
-    s_ar <- if (t == 0) diag(ndim_j) else psi[[l]] ^ t
-    # crossprod(s_ar, sigma[[l]])
-    sigma0[[l]] %*% s_ar
-  })})
-  S <- lapply(seq_len(nlev), function(l) toeplitz.block(ar_blocks[[l]]))
-  S
+  ar_blocks <- lapply(0:(ndim_t - 1), function(t) {
+    s_ar <- if (t == 0) diag(ndim_j) else psi ^ t
+    tcrossprod(sigma0, s_ar)
+  })
+  S <- toeplitz.block(ar_blocks)
+  list(S)
 }
 
 error_structure.cor_MMO3_cross <- function(eobj, type, ...){
@@ -527,8 +513,8 @@ build_error_struct.cor_MMO3 <- build_error_struct.cor_MMO3_cross <-
     # if (npar1 == 1) dim(corr_pars) <- c(1, nlev)
 
 
-    rVec <- tcrossprod(covar, corr_pars)#tcrossprod(covar, s[lower.tri(s)])#tcrossprod(covar, corr_pars)
-    sdQ  <- sqrt(diag(Q[[1]]))#
+    rVec <- tcrossprod(covar, corr_pars)#tcrossprod(covar, s[lower.tri(s)])
+    sdQ  <- sqrt(diag(Q[[1]]))
     return(list(rVec = rVec, sdVec = sdQ))
   }
 

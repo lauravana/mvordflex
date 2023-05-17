@@ -91,13 +91,13 @@ simulate_3dim_1rep_for_loop <- function(J, I, TT, P,
   }
   return(df)
 }
-set.seed(12345)
+set.seed(123456)
 
 out <- list()
 for (i in 1:100) {
   J  <- 3 ## number of responses
   TT <- 5 ## number of year
-  I  <- 100 ## number of firms
+  I  <- 1000 ## number of firms
   P  <- 2 ## number of covariates
 
   missings <- FALSE
@@ -133,6 +133,7 @@ for (i in 1:100) {
                                                      Sigma = Sigma,
                                                      Psi = Psi, missings = missings,
                                                      perc.miss = perc.miss)
+  save(data_toy_mvordflex2, file = "data/data_toy_mvordflex2.rda")
   res<- mvordflex(
     formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
     data = data_toy_mvordflex2,
@@ -141,8 +142,8 @@ for (i in 1:100) {
     threshold.constraints = rep(1:q, TT),
     control = mvord::mvord.control(se = TRUE,
                                    solver = "newuoa",
-                                   solver.optimx.control = list(maxit = 5000,
-                                                                eval.max= 1000,
+                                   solver.optimx.control = list(maxit = 15000,
+                                                                eval.max= 10000,
                                                                 trace = 1)))
   out[[i]] <- summary(res)
 }
