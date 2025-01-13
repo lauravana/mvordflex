@@ -354,8 +354,8 @@ mvordflex <- function(formula,
   ##  check if data is a data.frame
   if(!is.data.frame(data)) {
     warning("data has to be of type data.frame. Automatically applied as.data.frame() to data.")
-    data <- as.data.frame(data)
   }
+  data <- as.data.frame(data)
   ### MMO ###
   #if(formula[[2]][[1]] == "MMO"){
   #  rho <- initialize_MMO(rho, formula, data, error.structure, contrasts)

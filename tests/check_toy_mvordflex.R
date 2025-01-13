@@ -4,9 +4,12 @@ data("data_toy_mvordflex2", package = "mvordflex")
 q <- 3 # number of multiple measurements
 TT <- 5 # number of years
 
+
+# data_toy_mvordflex3 <- dplyr::as_tibble(data_toy_mvordflex2)
+
 # Note that the number of responses is q*TT
 ## Probit
-res<- mvordflex(
+res <- mvordflex(
   formula = MMO3(response, firm_id, year_id, outcome_id) ~ 0 + X1 + X2,
   data = data_toy_mvordflex2,
   error.structure = cor_MMO3_cross(~1),

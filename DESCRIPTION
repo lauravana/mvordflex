@@ -1,22 +1,27 @@
 Package: mvordflex
 Title: Multivariate Ordinal Regression Models
-Version: 0.0.2
-Date: 2022-10-01
-Author: Rainer Hirk [aut, cre],
-        Laura Vana [aut],
-        Alan Genz [ctb] (Fortran Code)
-Maintainer: Laura Vana <laura.vana@tuwien.ac.at>
+Version: 0.0.3
+Date: 2025-01-13
+Authors@R: c(
+    person("Rainer", "Hirk", role = c("aut")),
+    person("Laura", "Vana", role = c("aut", "cre"), 
+          email = "laura.vana@tuwien.ac.at",
+          comment = c(ORCID = "0000-0002-9613-7604")),
+    person("Alan", "Gentz", role = c("ctb")))
 Description: A flexible framework for fitting multivariate ordinal regression models with
   composite likelihood methods to three dimensional panel data. The package extends R
   package mvord with a further multiple measurement object and a further correlation
   structure, to accommodate for multiple measurements which exhibit cross-sectional
-  and longitudinal dependence. Medium-term the functionalities will be incorporated
-  in package mvord.
+  and longitudinal dependence. Medium-term, the functionalities will be incorporated
+  in package mvord. For more information on the model class and the software, 
+  see Vana-Gür (2024) <doi:10.1016/j.csda.2024.108013>.
 License: GPL-3
 Depends: minqa, BB, ucminf, dfoptim, R (>= 3.5.0)
 Imports: MASS, pbivnorm, stats, optimx, mnormt, numDeriv, Matrix, mvord
 Suggests: knitr, rmarkdown, xtable, colorspace
 VignetteBuilder: knitr
+URL: https://github.com/lauravana/mvordflex
+BugReports: https://github.com/lauravana/mvordflex/issues
 Encoding: UTF-8
 NeedsCompilation: yes
 RoxygenNote: 7.2.1
